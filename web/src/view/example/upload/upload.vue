@@ -70,98 +70,49 @@
               :classId="search.classId"
               @on-success="onSuccess"
             />
-            <el-button type="primary" icon="upload" @click="importUrlFunc">
-              导入URL
-            </el-button>
-            <el-input
-              v-model="search.keyword"
-              class="w-72"
-              placeholder="请输入文件名或备注"
-            />
-            <el-button type="primary" icon="search" @click="onSubmit"
-              >查询
-            </el-button>
           </div>
 
-          <el-table :data="tableData">
-            <el-table-column align="left" label="预览" width="100">
-              <template #default="scope">
-                <CustomPic pic-type="file" :pic-src="scope.row.url" preview />
-              </template>
-            </el-table-column>
-            <el-table-column
-              align="left"
-              label="日期"
-              prop="UpdatedAt"
-              width="180"
-            >
-              <template #default="scope">
-                <div>{{ formatDate(scope.row.UpdatedAt) }}</div>
-              </template>
-            </el-table-column>
-            <el-table-column
-              align="left"
-              label="文件名/备注"
-              prop="name"
-              width="180"
-            >
-              <template #default="scope">
-                <div
-                  class="cursor-pointer"
-                  @click="editFileNameFunc(scope.row)"
-                >
-                  {{ scope.row.name }}
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column
-              align="left"
-              label="链接"
-              prop="url"
-              min-width="300"
-            />
-            <el-table-column align="left" label="标签" prop="tag" width="100">
-              <template #default="scope">
-                <el-tag
-                  :type="
-                    scope.row.tag?.toLowerCase() === 'jpg' ? 'info' : 'success'
-                  "
-                  disable-transitions
-                  >{{ scope.row.tag }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column align="left" label="操作" width="160">
-              <template #default="scope">
-                <el-button
-                  icon="download"
-                  type="primary"
-                  link
-                  @click="downloadFile(scope.row)"
-                  >下载
-                </el-button>
-                <el-button
-                  icon="delete"
-                  type="primary"
-                  link
-                  @click="deleteFileFunc(scope.row)"
-                  >删除
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-          <div class="gva-pagination">
-            <el-pagination
-              :current-page="page"
-              :page-size="pageSize"
-              :page-sizes="[10, 30, 50, 100]"
-              :style="{ float: 'right', padding: '20px' }"
-              :total="total"
-              layout="total, sizes, prev, pager, next, jumper"
-              @current-change="handleCurrentChange"
-              @size-change="handleSizeChange"
-            />
-          </div>
+          <GvaGrid ref="gridRef" v-bind="gridOptions" v-on="gridEvents">
+            <template #toolbar-buttons>
+              <el-button type="primary" icon="upload" @click="importUrlFunc">导入URL</el-button>
+              <el-input
+                v-model="search.keyword"
+                class="w-72"
+                placeholder="请输入文件名或备注"
+              />
+              <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
+            </template>
+
+            <template #preview="{ row }">
+              <CustomPic pic-type="file" :pic-src="row.url" preview />
+            </template>
+
+            <template #updatedAt="{ row }">
+              <div>{{ formatDate(row.UpdatedAt) }}</div>
+            </template>
+
+            <template #name="{ row }">
+              <div class="cursor-pointer" @click="editFileNameFunc(row)">
+                {{ row.name }}
+              </div>
+            </template>
+
+            <template #url="{ row }">
+              {{ row.url }}
+            </template>
+
+            <template #tag="{ row }">
+              <el-tag
+                :type="row.tag?.toLowerCase() === 'jpg' ? 'info' : 'success'"
+                disable-transitions
+              >{{ row.tag }}</el-tag>
+            </template>
+
+            <template #operate="{ row }">
+              <el-button icon="download" type="primary" link @click="downloadFile(row)">下载</el-button>
+              <el-button icon="delete" type="primary" link @click="deleteFileFunc(row)">删除</el-button>
+            </template>
+          </GvaGrid>
         </div>
       </div>
     </div>
@@ -218,6 +169,7 @@
   import UploadCommon from '@/components/upload/common.vue'
   import { CreateUUID, formatDate } from '@/utils/format'
   import WarningBar from '@/components/warningBar/warningBar.vue'
+  import GvaGrid, { useGvaGrid } from '@/components/gvaGrid'
 
   import { ref } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
@@ -239,47 +191,32 @@
   const imageUrl = ref('')
   const imageCommon = ref('')
 
-  const page = ref(1)
-  const total = ref(0)
-  const pageSize = ref(10)
   const search = ref({
     keyword: null,
     classId: 0
   })
-  const tableData = ref([])
-
-  // 分页
-  const handleSizeChange = (val) => {
-    pageSize.value = val
-    getTableData()
-  }
-
-  const handleCurrentChange = (val) => {
-    page.value = val
-    getTableData()
-  }
 
   const onSubmit = () => {
     search.value.classId = 0
-    page.value = 1
-    getTableData()
+    reload()
   }
 
-  // 查询
-  const getTableData = async () => {
-    const table = await getFileList({
-      page: page.value,
-      pageSize: pageSize.value,
-      ...search.value
-    })
-    if (table.code === 0) {
-      tableData.value = table.data.list
-      total.value = table.data.total
-      page.value = table.data.page
-      pageSize.value = table.data.pageSize
-    }
-  }
-  getTableData()
+  const { gridRef, gridOptions, gridEvents, reload, refresh } = useGvaGrid({
+    id: 'example-upload',
+    api: getFileList,
+    defaultSort: null,
+    searchItems: [
+      { field: 'keyword', title: '关键字', span: 8, itemRender: { name: 'VxeInput', props: { placeholder: '请输入文件名或备注', clearable: true } } }
+    ],
+    columns: [
+      { field: 'url', title: '预览', width: 100, slots: { default: 'preview' } },
+      { field: 'UpdatedAt', title: '日期', width: 180, cellRender: { name: 'gvaDate' } },
+      { field: 'name', title: '文件名/备注', width: 180, slots: { default: 'name' } },
+      { title: '链接', minWidth: 300, slots: { default: 'url' } },
+      { field: 'tag', title: '标签', width: 100, slots: { default: 'tag' } },
+      { title: '操作', width: 160, slots: { default: 'operate' } }
+    ]
+  })
 
   const deleteFileFunc = async (row) => {
     ElMessageBox.confirm('此操作将永久删除文件, 是否继续?', '提示', {
@@ -294,10 +231,7 @@
             type: 'success',
             message: '删除成功!'
           })
-          if (tableData.value.length === 1 && page.value > 1) {
-            page.value--
-          }
-          await getTableData()
+          await refresh()
         }
       })
       .catch(() => {

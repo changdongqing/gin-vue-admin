@@ -122,7 +122,19 @@ service.interceptors.request.use(
       config.timeout = DEFAULT_REQUEST_TIMEOUT
     }
 
-    if (!config.donNotShowLoading) {
+    // loadingOption: false 逃逸口（POST data 内联传入，发送前剔除，不污染请求体）
+    // 供 GvaGrid 等组件关闭全局 ElLoading，使用自身区域加载态
+    const payload = config.data
+    const payloadLoadingDisabled =
+      payload &&
+      typeof payload === 'object' &&
+      !Array.isArray(payload) &&
+      payload.loadingOption === false
+    if (payloadLoadingDisabled) {
+      delete payload.loadingOption
+    }
+
+    if (!config.donNotShowLoading && !payloadLoadingDisabled) {
       showLoading(config.loadingOption)
     }
 

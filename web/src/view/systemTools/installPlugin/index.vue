@@ -18,66 +18,53 @@
 
     <!-- Plugin List Table -->
     <div style="margin-top: 20px;">
-      <el-table :data="pluginList" style="width: 100%">
-        <el-table-column type="expand">
-            <template #default="props">
-                <div style="padding: 20px;">
-                    <h3>API 列表</h3>
-                    <el-table :data="props.row.apis" border>
-                        <el-table-column prop="path" label="路径" />
-                        <el-table-column prop="method" label="方法" />
-                        <el-table-column prop="description" label="描述" />
-                        <el-table-column prop="apiGroup" label="APIGROUP" />
-                    </el-table>
-                    <h3>菜单列表</h3>
-                    <el-table :data="props.row.menus" row-key="name" :tree-props="{children: 'children', hasChildren: 'hasChildren'}" border>
-                        <el-table-column prop="meta.title" label="标题" />
-                        <el-table-column prop="name" label="Name" />
-                        <el-table-column prop="path" label="Path" />
-                    </el-table>
-                     <h3>字典列表</h3>
-                     <el-table :data="props.row.dictionaries" border>
-                         <el-table-column prop="name" label="字典名" />
-                         <el-table-column prop="type" label="字典类型" />
-                         <el-table-column prop="desc" label="描述" />
-                     </el-table>
-                </div>
-            </template>
-        </el-table-column>
-        <el-table-column prop="pluginName" label="插件名称" />
-        <el-table-column prop="pluginType" label="插件类型">
-          <template #default="scope">
-              {{ typeMap[scope.row.pluginType] || '未知类型' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作">
-          <template #default="scope">
-            <el-button type="primary" link icon="delete" @click="deletePlugin(scope.row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <GvaGrid ref="gridRef" v-bind="gridOptions" v-on="gridEvents">
+        <template #expand="{ row }">
+          <div style="padding: 20px;">
+            <h3>API 列表</h3>
+            <el-table :data="row.apis" border>
+              <el-table-column prop="path" label="路径" />
+              <el-table-column prop="method" label="方法" />
+              <el-table-column prop="description" label="描述" />
+              <el-table-column prop="apiGroup" label="APIGROUP" />
+            </el-table>
+            <h3>菜单列表</h3>
+            <el-table :data="row.menus" row-key="name" :tree-props="{children: 'children', hasChildren: 'hasChildren'}" border>
+              <el-table-column prop="meta.title" label="标题" />
+              <el-table-column prop="name" label="Name" />
+              <el-table-column prop="path" label="Path" />
+            </el-table>
+            <h3>字典列表</h3>
+            <el-table :data="row.dictionaries" border>
+              <el-table-column prop="name" label="字典名" />
+              <el-table-column prop="type" label="字典类型" />
+              <el-table-column prop="desc" label="描述" />
+            </el-table>
+          </div>
+        </template>
+
+        <template #pluginType="{ row }">
+          {{ typeMap[row.pluginType] || '未知类型' }}
+        </template>
+
+        <template #operate="{ row }">
+          <el-button type="primary" link icon="delete" @click="deletePlugin(row)">删除</el-button>
+        </template>
+      </GvaGrid>
     </div>
   </div>
 </template>
 
 <script setup>
-  import { ref, onMounted } from 'vue'
-  import { ElMessage } from 'element-plus'
+  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { UploadFilled } from '@element-plus/icons-vue'
   import { getBaseUrl } from '@/utils/format'
   import { useUserStore } from "@/pinia";
   import { getPluginList, removePlugin } from '@/api/autoCode'
-  import { ElMessageBox } from 'element-plus'
+  import GvaGrid, { useGvaGrid, useGvaGridDelete } from '@/components/gvaGrid'
 
   const userStore = useUserStore()
   const token = userStore.token
-  const pluginList = ref([])
-
-  const getTableData = async () => {
-    const res = await getPluginList()
-    if (res.code === 0) {
-      pluginList.value = res.data
-    }
-  }
 
   const typeMap = {
     "server": "后端插件",
@@ -85,29 +72,27 @@
     "full": "全栈插件"
   }
 
-  const deletePlugin = (row) => {
-    ElMessageBox.confirm(
-    '此操作将永久删除该插件及其关联的API、菜单和字典数据, 是否继续?',
-    '提示',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    }
-  )
-    .then(async () => {
-      const res = await removePlugin({ pluginName: row.pluginName, pluginType: row.pluginType })
-      if (res.code === 0) {
-        ElMessage.success('删除成功')
-        getTableData()
-      }
-    })
-    .catch(() => {
-    })
-  }
+  const { gridRef, gridOptions, gridEvents, refresh } = useGvaGrid({
+    id: 'systemTools-installPlugin',
+    pager: false,
+    defaultSort: null,
+    api: async () => {
+      const res = await getPluginList()
+      const list = res.data || []
+      return { ...res, data: { list, total: list.length } }
+    },
+    columns: [
+      { type: 'expand', width: 50, slots: { content: 'expand' } },
+      { field: 'pluginName', title: '插件名称', minWidth: 180 },
+      { field: 'pluginType', title: '插件类型', minWidth: 120, slots: { default: 'pluginType' } },
+      { title: '操作', width: 120, slots: { default: 'operate' } }
+    ]
+  })
 
-  onMounted(() => {
-    getTableData()
+  const { deleteRow: deletePlugin } = useGvaGridDelete(gridRef, {
+    delete: (rows) => removePlugin({ pluginName: rows[0].pluginName, pluginType: rows[0].pluginType }),
+    confirmText: '此操作将永久删除该插件及其关联的API、菜单和字典数据, 是否继续?',
+    successText: '删除成功'
   })
 
   const handleSuccess = (res) => {
@@ -118,7 +103,7 @@
           msg += `${index + 1}.${item.msg}\n`
         })
       alert(msg)
-      getTableData() // Refresh list on success
+      refresh() // Refresh list on success
     } else {
       ElMessage.error(res.msg)
     }

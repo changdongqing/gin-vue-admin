@@ -1,115 +1,34 @@
 <template>
   <div>
-    <div class="gva-table-box">
-      <div class="gva-btn-list">
-        <el-button type="primary" icon="plus" @click="addMenu(0)">
-          新增根菜单
-        </el-button>
-      </div>
+    <GvaGrid ref="gridRef" v-bind="gridOptions" v-on="gridEvents">
+      <template #toolbar-buttons>
+        <el-button type="primary" icon="plus" @click="addMenu(0)">新增根菜单</el-button>
+      </template>
 
-      <!-- 由于此处菜单跟左侧列表一一对应所以不需要分页 pageSize默认999 -->
-      <el-table :data="tableData" row-key="ID">
-        <el-table-column align="left" label="ID" min-width="100" prop="ID" />
-        <el-table-column
-          align="left"
-          label="展示名称"
-          min-width="120"
-          prop="authorityName"
-        >
-          <template #default="scope">
-            <span>{{ scope.row.meta.title }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column
-          align="left"
-          label="图标"
-          min-width="140"
-          prop="authorityName"
-        >
-          <template #default="scope">
-            <div v-if="scope.row.meta.icon" class="icon-column">
-              <el-icon>
-                <component :is="scope.row.meta.icon" />
-              </el-icon>
-              <span>{{ scope.row.meta.icon }}</span>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column
-          align="left"
-          label="路由Name"
-          show-overflow-tooltip
-          min-width="160"
-          prop="name"
-        />
-        <el-table-column
-          align="left"
-          label="路由Path"
-          show-overflow-tooltip
-          min-width="160"
-          prop="path"
-        />
-        <el-table-column
-          align="left"
-          label="是否隐藏"
-          min-width="100"
-          prop="hidden"
-        >
-          <template #default="scope">
-            <span>{{ scope.row.hidden ? '隐藏' : '显示' }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column
-          align="left"
-          label="父节点"
-          min-width="90"
-          prop="parentId"
-        />
-        <el-table-column align="left" label="排序" min-width="70" prop="sort" />
-        <el-table-column
-          align="left"
-          label="文件路径"
-          min-width="360"
-          prop="component"
-        />
-        <el-table-column min-width="360" align="left" fixed="right" label="操作" :min-width="appStore.operateMinWith">
-          <template #default="scope">
-            <el-button
-              type="primary"
-              link
-              icon="plus"
-              @click="addMenu(scope.row.ID)"
-            >
-              添加子菜单
-            </el-button>
-            <el-button
-              type="primary"
-              link
-              icon="edit"
-              @click="editMenu(scope.row.ID)"
-            >
-              编辑
-            </el-button>
-            <el-button
-              type="primary"
-              link
-              icon="user"
-              @click="openAssignRoleDrawer(scope.row)"
-            >
-              分配角色
-            </el-button>
-            <el-button
-              type="primary"
-              link
-              icon="delete"
-              @click="deleteMenu(scope.row.ID)"
-            >
-              删除
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </div>
+      <template #title="{ row }">
+        <span>{{ row.meta.title }}</span>
+      </template>
+
+      <template #icon="{ row }">
+        <div v-if="row.meta.icon" class="icon-column">
+          <el-icon>
+            <component :is="row.meta.icon" />
+          </el-icon>
+          <span>{{ row.meta.icon }}</span>
+        </div>
+      </template>
+
+      <template #hidden="{ row }">
+        <span>{{ row.hidden ? '隐藏' : '显示' }}</span>
+      </template>
+
+      <template #operate="{ row }">
+        <el-button type="primary" link icon="plus" @click="addMenu(row.ID)">添加子菜单</el-button>
+        <el-button type="primary" link icon="edit" @click="editMenu(row.ID)">编辑</el-button>
+        <el-button type="primary" link icon="user" @click="openAssignRoleDrawer(row)">分配角色</el-button>
+        <el-button type="primary" link icon="delete" @click="deleteMenu(row.ID)">删除</el-button>
+      </template>
+    </GvaGrid>
     <el-drawer
       v-model="dialogFormVisible"
       :size="appStore.drawerSize"
@@ -571,6 +490,7 @@
 
   import pathInfo from '@/pathInfo.json'
   import { useAppStore } from "@/pinia";
+  import GvaGrid, { useGvaGrid } from '@/components/gvaGrid'
 
   defineOptions({
     name: 'Menus'
@@ -586,16 +506,32 @@
     ]
   })
 
-  const tableData = ref([])
-  // 查询
-  const getTableData = async () => {
-    const table = await getMenuList()
-    if (table.code === 0) {
-      tableData.value = table.data
-    }
-  }
-
-  getTableData()
+  // 菜单树：无分页无搜索，接口直接返回树数组
+  const { gridRef, gridOptions, gridEvents, refresh } = useGvaGrid({
+    id: 'superAdmin-menu',
+    pager: false,
+    defaultSort: null,
+    api: async () => {
+      const res = await getMenuList()
+      const list = res.data || []
+      return { ...res, data: { list, total: list.length } }
+    },
+    gridConfig: {
+      treeConfig: { rowField: 'ID', children: 'children' }
+    },
+    columns: [
+      { field: 'ID', title: 'ID', minWidth: 100 },
+      { field: 'meta.title', title: '展示名称', minWidth: 120, treeNode: true, slots: { default: 'title' } },
+      { field: 'meta.icon', title: '图标', minWidth: 140, slots: { default: 'icon' } },
+      { field: 'name', title: '路由Name', minWidth: 160 },
+      { field: 'path', title: '路由Path', minWidth: 160 },
+      { field: 'hidden', title: '是否隐藏', minWidth: 100, slots: { default: 'hidden' } },
+      { field: 'parentId', title: '父节点', minWidth: 90 },
+      { field: 'sort', title: '排序', minWidth: 70 },
+      { field: 'component', title: '文件路径', minWidth: 360 },
+      { title: '操作', fixed: 'right', slots: { default: 'operate' } }
+    ]
+  })
 
   // 新增参数
   const addParameter = (form) => {
@@ -688,7 +624,7 @@
             message: '删除成功!'
           })
 
-          getTableData()
+          refresh()
         }
       })
       .catch(() => {
@@ -742,7 +678,7 @@
             type: 'success',
             message: isEdit.value ? '编辑成功' : '添加成功，请到角色管理页面分配权限'
           })
-          getTableData()
+          refresh()
         }
         initForm()
         dialogFormVisible.value = false

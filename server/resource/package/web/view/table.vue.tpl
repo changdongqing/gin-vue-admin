@@ -2,19 +2,35 @@
 {{- $templateID := printf "%s_%s" .Package .StructName }}
 {{- if .IsAdd }}
 
-// 请在搜索条件中增加如下代码
+// 请在 useGvaGrid 的 searchItems 中增加如下代码
 {{- range .Fields}}
     {{- if .FieldSearchType}}
-{{ GenerateSearchFormItem .}}
+{{ GenerateGridSearchItem .}}
     {{ end }}
 {{ end }}
 
 
-// 表格增加如下列代码
+// 表格增加如下列代码（columns 数组）
 
 {{- range .Fields}}
     {{- if .Table}}
-       {{ GenerateTableColumn . }}
+       {{ GenerateGridColumnSchema . }}
+    {{- end }}
+{{- end }}
+
+// 复杂列的插槽片段（放入 <GvaGrid> 内）
+
+{{- range .Fields}}
+    {{- if .Table}}
+       {{ GenerateGridColumnSlot . }}
+    {{- end }}
+{{- end }}
+
+// 查询项插槽片段（放入 <GvaGrid> 内）
+
+{{- range .Fields}}
+    {{- if .FieldSearchType}}
+       {{ GenerateGridSearchItemSlot . }}
     {{- end }}
 {{- end }}
 
@@ -94,105 +110,39 @@ getDataSourceFunc()
 {{- if not .OnlyTemplate}}
 <template>
   <div>
-  {{- if not .IsTree }}
-    <div class="gva-search-box">
-      <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline" @keyup.enter="onSubmit">
-      {{- if .GvaModel }}
-      <el-form-item label="创建日期" prop="createdAtRange">
-      <template #label>
-        <span>
-          创建日期
-          <el-tooltip content="搜索范围是开始日期（包含）至结束日期（不包含）">
-            <el-icon><QuestionFilled /></el-icon>
-          </el-tooltip>
-        </span>
+    <GvaGrid ref="gridRef" v-bind="gridOptions" v-on="gridEvents">
+      <template #toolbar-buttons>
+        <el-button {{ if $global.AutoCreateBtnAuth }}v-auth="btnAuth.add"{{ end }} type="primary" icon="plus" @click="openDialog()">新增</el-button>
+        <el-button {{ if $global.AutoCreateBtnAuth }}v-auth="btnAuth.batchDelete"{{ end }} icon="delete" :disabled="!selectedRows.length" @click="onDelete(selectedRows)">删除</el-button>
+        {{ if .HasExcel -}}
+        <ExportTemplate {{ if $global.AutoCreateBtnAuth }}v-auth="btnAuth.exportTemplate"{{ end }} template-id="{{$templateID}}" />
+        <ExportExcel {{ if $global.AutoCreateBtnAuth }}v-auth="btnAuth.exportExcel"{{ end }} template-id="{{$templateID}}" filterDeleted/>
+        <ImportExcel {{ if $global.AutoCreateBtnAuth }}v-auth="btnAuth.importExcel"{{ end }} template-id="{{$templateID}}" @on-success="refresh" />
+        {{- end }}
       </template>
 
-      <el-date-picker
-            v-model="searchInfo.createdAtRange"
-            class="!w-380px"
-            type="datetimerange"
-            range-separator="至"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
-          />
-       </el-form-item>
-      {{ end -}}
-           {{- range .Fields}}  {{- if .FieldSearchType}} {{- if not .FieldSearchHide }}
-            {{ GenerateSearchFormItem .}}
-            {{ end }}{{ end }}{{ end }}
+      {{- range .Fields}}
+      {{- if .FieldSearchType}}
+      {{ GenerateGridSearchItemSlot . }}
+      {{- end }}
+      {{- end }}
 
-        <template v-if="showAllQuery">
-          <!-- 将需要控制显示状态的查询条件添加到此范围内 -->
-          {{- range .Fields}}  {{- if .FieldSearchType}} {{- if .FieldSearchHide }}
-          {{ GenerateSearchFormItem .}}
-          {{ end }}{{ end }}{{ end }}
-        </template>
+      {{- range .Fields}}
+      {{- if .Table}}
+      {{ GenerateGridColumnSlot . }}
+      {{- end }}
+      {{- end }}
 
-        <el-form-item>
-          <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
-          <el-button icon="refresh" @click="onReset">重置</el-button>
-          <el-button link type="primary" icon="arrow-down" @click="showAllQuery=true" v-if="!showAllQuery">展开</el-button>
-          <el-button link type="primary" icon="arrow-up" @click="showAllQuery=false" v-else>收起</el-button>
-        </el-form-item>
-      </el-form>
-    </div>
-  {{- end }}
-    <div class="gva-table-box">
-        <div class="gva-btn-list">
-            <el-button {{ if $global.AutoCreateBtnAuth }}v-auth="btnAuth.add"{{ end }} type="primary" icon="plus" @click="openDialog()">新增</el-button>
-            <el-button {{ if $global.AutoCreateBtnAuth }}v-auth="btnAuth.batchDelete"{{ end }} icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length" @click="onDelete">删除</el-button>
-            {{ if .HasExcel -}}
-            <ExportTemplate {{ if $global.AutoCreateBtnAuth }}v-auth="btnAuth.exportTemplate"{{ end }} template-id="{{$templateID}}" />
-            <ExportExcel {{ if $global.AutoCreateBtnAuth }}v-auth="btnAuth.exportExcel"{{ end }} template-id="{{$templateID}}" filterDeleted/>
-            <ImportExcel {{ if $global.AutoCreateBtnAuth }}v-auth="btnAuth.importExcel"{{ end }} template-id="{{$templateID}}" @on-success="getTableData" />
-            {{- end }}
-        </div>
-        <el-table
-        ref="multipleTable"
-        style="width: 100%"
-        tooltip-effect="dark"
-        :data="tableData"
-        row-key="{{.PrimaryField.FieldJson}}"
-        @selection-change="handleSelectionChange"
-        {{- if .NeedSort}}
-        @sort-change="sortChange"
-        {{- end}}
-        >
-        <el-table-column type="selection" width="55" />
-        {{ if .GvaModel }}
-        <el-table-column sortable align="left" label="日期" prop="CreatedAt" {{ if .IsTree -}} min-{{- end -}}width="180">
-            <template #default="scope">{{ "{{ formatDate(scope.row.CreatedAt) }}" }}</template>
-        </el-table-column>
-        {{ end }}
-        {{- range .Fields}}
-        {{- if .Table}}
-            {{ GenerateTableColumn . }}
-        {{- end }}
-        {{- end }}
-        <el-table-column align="left" label="操作" fixed="right" :min-width="appStore.operateMinWith">
-            <template #default="scope">
-            {{- if .IsTree }}
-            <el-button {{ if $global.AutoCreateBtnAuth }}v-auth="btnAuth.add"{{ end }} type="primary" link class="table-button" @click="openDialog(scope.row)"><el-icon style="margin-right: 5px"><InfoFilled /></el-icon>新增子节点</el-button>
-            {{- end }}
-            <el-button {{ if $global.AutoCreateBtnAuth }}v-auth="btnAuth.info"{{ end }} type="primary" link class="table-button" @click="getDetails(scope.row)"><el-icon style="margin-right: 5px"><InfoFilled /></el-icon>查看</el-button>
-            <el-button {{ if $global.AutoCreateBtnAuth }}v-auth="btnAuth.edit"{{ end }} type="primary" link icon="edit" class="table-button" @click="update{{.StructName}}Func(scope.row)">编辑</el-button>
-            <el-button {{ if .IsTree }}v-if="!scope.row.children?.length" {{ end }} {{if $global.AutoCreateBtnAuth }}v-auth="btnAuth.delete"{{ end }} type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
-            </template>
-        </el-table-column>
-        </el-table>
-        <div class="gva-pagination">
-            <el-pagination
-            layout="total, sizes, prev, pager, next, jumper"
-            :current-page="page"
-            :page-size="pageSize"
-            :page-sizes="[10, 30, 50, 100]"
-            :total="total"
-            @current-change="handleCurrentChange"
-            @size-change="handleSizeChange"
-            />
-        </div>
-    </div>
+      <template #operate="{ row }">
+      {{- if .IsTree }}
+        <el-button {{ if $global.AutoCreateBtnAuth }}v-auth="btnAuth.add"{{ end }} type="primary" link icon="plus" @click="openDialog(row)"><el-icon style="margin-right: 5px"><InfoFilled /></el-icon>新增子节点</el-button>
+      {{- end }}
+        <el-button {{ if $global.AutoCreateBtnAuth }}v-auth="btnAuth.info"{{ end }} type="primary" link icon="info-filled" @click="getDetails(row)"><el-icon style="margin-right: 5px"><InfoFilled /></el-icon>查看</el-button>
+        <el-button {{ if $global.AutoCreateBtnAuth }}v-auth="btnAuth.edit"{{ end }} type="primary" link icon="edit" @click="update{{.StructName}}Func(row)">编辑</el-button>
+        <el-button {{ if .IsTree }}v-if="!row.children?.length" {{ end }} {{if $global.AutoCreateBtnAuth }}v-auth="btnAuth.delete"{{ end }} type="primary" link icon="delete" @click="deleteRow(row)">删除</el-button>
+      </template>
+    </GvaGrid>
+
     <el-drawer destroy-on-close :size="appStore.drawerSize" v-model="dialogFormVisible" :show-close="false" :before-close="closeDialog">
        <template #header>
               <div class="flex justify-between items-center">
@@ -294,13 +244,14 @@ import ArrayCtrl from '@/components/arrayCtrl/arrayCtrl.vue'
 
 // 全量引入格式化工具 请按需保留
 import { getDictFunc, formatDate, formatBoolean, filterDict ,filterDataSource, returnArrImg, onDownloadFile } from '@/utils/format'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { ref, reactive } from 'vue'
 {{- if .AutoCreateBtnAuth }}
 // 引入按钮权限标识
 import { useBtnAuth } from '@/utils/btnAuth'
 {{- end }}
 import { useAppStore } from "@/pinia"
+import GvaGrid, { useGvaGrid, useGvaGridDelete } from '@/components/gvaGrid'
 
 {{if .HasExcel -}}
 // 导出组件
@@ -324,9 +275,6 @@ defineOptions({
 // 提交按钮loading
 const btnLoading = ref(false)
 const appStore = useAppStore()
-
-// 控制更多查询条件显示/隐藏状态
-const showAllQuery = ref(false)
 
 // 自动化生成的字典（可能为空）以及字段
     {{- range $index, $element := .DictTypes}}
@@ -380,86 +328,8 @@ const rule = reactive({
 })
 
 const elFormRef = ref()
-const elSearchFormRef = ref()
 
-// =========== 表格控制部分 ===========
-const page = ref(1)
-const total = ref(0)
-const pageSize = ref(10)
-const tableData = ref([])
-const searchInfo = ref({})
-
-{{- if .NeedSort}}
-// 排序
-const sortChange = ({ prop, order }) => {
-  const sortMap = {
-    CreatedAt:"created_at",
-    ID:"id",
-    {{- range .Fields}}
-     {{- if .Table}}
-      {{- if and .Sort}}
-        {{- if not (eq .ColumnName "")}}
-            {{.FieldJson}}: '{{.ColumnName}}',
-        {{- end}}
-      {{- end}}
-     {{- end}}
-    {{- end}}
-  }
-
-  let sort = sortMap[prop]
-  if(!sort){
-   sort = prop.replace(/[A-Z]/g, match => `_${match.toLowerCase()}`)
-  }
-
-  searchInfo.value.sort = sort
-  searchInfo.value.order = order
-  getTableData()
-}
-{{- end}}
-
-{{- if not .IsTree }}
-// 重置
-const onReset = () => {
-  searchInfo.value = {}
-  getTableData()
-}
-
-// 搜索
-const onSubmit = () => {
-  elSearchFormRef.value?.validate(async(valid) => {
-    if (!valid) return
-    page.value = 1
-    {{- range .Fields}}{{- if eq .FieldType "bool" }}
-    if (searchInfo.value.{{.FieldJson}} === ""){
-        searchInfo.value.{{.FieldJson}}=null
-    }{{ end }}{{ end }}
-    getTableData()
-  })
-}
-
-// 分页
-const handleSizeChange = (val) => {
-  pageSize.value = val
-  getTableData()
-}
-
-// 修改页面容量
-const handleCurrentChange = (val) => {
-  page.value = val
-  getTableData()
-}
-
-// 查询
-const getTableData = async() => {
-  const table = await get{{.StructName}}List({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
-  if (table.code === 0) {
-    tableData.value = table.data.list
-    total.value = table.data.total
-    page.value = table.data.page
-    pageSize.value = table.data.pageSize
-  }
-}
-{{- else }}
+{{- if .IsTree }}
 // 树选择器配置
 const defaultProps = {
   children: "children",
@@ -472,19 +342,69 @@ const rootNode = {
   {{ .TreeJson }}: '根节点',
   children: []
 }
+{{- end }}
 
-// 查询
-const getTableData = async() => {
-  const table = await get{{.StructName}}List()
-  if (table.code === 0) {
-    tableData.value = table.data || []
-  }
+// =========== GvaGrid 表格配置 ===========
+const tableData = ref([])
+
+const { gridRef, gridOptions, gridEvents, selectedRows, refresh } = useGvaGrid({
+    id: '{{.Package}}-{{.PackageName}}',
+    api: async (params) => {
+        const res = await get{{.StructName}}List(params)
+        {{- if .IsTree }}
+        tableData.value = res.data || []
+        return { ...res, data: { list: tableData.value, total: tableData.value.length } }
+        {{- else }}
+        return res
+        {{- end }}
+    },
+    {{- if .IsTree }}
+    pager: false,
+    {{- end }}
+    defaultSort: null,
+    {{- if .NeedSort }}
+    sortProtocol: 'autoCode',
+    {{- end }}
+    checkbox: true,
+    {{- if not .IsTree }}
+    searchItems: [
+      {{- if .GvaModel }}
+      { field: 'createdAtRange', title: '创建日期', span: 8, itemRender: { name: 'gvaDateRange', props: { type: 'datetimerange', valueFormat: 'YYYY-MM-DD HH:mm:ss' } } },
+      {{- end }}
+      {{- range .Fields}}{{- if .FieldSearchType}}{{- if not .FieldSearchHide }}
+      {{ GenerateGridSearchItem .}}
+      {{- end }}{{- end }}{{- end }}
+    ],
+    {{- end }}
+    gridConfig: {
+      {{- if .IsTree }}
+      treeConfig: { rowField: '{{.PrimaryField.FieldJson}}', children: 'children', expandAll: false }
+      {{- else }}
+      customConfig: { storage: true }
+      {{- end }}
+    },
+    columns: [
+      {{- if .GvaModel }}
+      { field: 'CreatedAt', title: '日期', width: 180, {{- if .NeedSort }} sortable: true,{{- end }} cellRender: { name: 'gvaDate' } },
+      {{- end }}
+      {{- range .Fields}}
+      {{- if .Table}}
+      {{ GenerateGridColumnSchema . }}
+      {{- end }}
+      {{- end }}
+      { title: '操作', fixed: 'right', slots: { default: 'operate' } }
+    ]
+})
+
+{{- if .IsTree }}
+// 树表首列显示树形展开
+if (gridOptions.columns && gridOptions.columns.length) {
+  const firstFieldColumn = gridOptions.columns.find((c) => !c.type && c.field !== 'operate')
+  if (firstFieldColumn) firstFieldColumn.treeNode = true
 }
 {{- end }}
 
-getTableData()
-
-// ============== 表格控制部分结束 ===============
+// ============== GvaGrid 表格配置结束 ===============
 
 // 获取需要的字典 可能为空 按需保留
 const setOptions = async () =>{
@@ -496,57 +416,17 @@ const setOptions = async () =>{
 // 获取需要的字典 可能为空 按需保留
 setOptions()
 
-
-// 多选数据
-const multipleSelection = ref([])
-// 多选
-const handleSelectionChange = (val) => {
-    multipleSelection.value = val
-}
-
-// 删除行
-const deleteRow = (row) => {
-    ElMessageBox.confirm('确定要删除吗?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-    }).then(() => {
-            delete{{.StructName}}Func(row)
-        })
-    }
-
-// 多选删除
-const onDelete = async() => {
-  ElMessageBox.confirm('确定要删除吗?', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(async() => {
-      const {{.PrimaryField.FieldJson}}s = []
-      if (multipleSelection.value.length === 0) {
-        ElMessage({
-          type: 'warning',
-          message: '请选择要删除的数据'
-        })
-        return
+// 删除（单行/批量，含确认框、成功提示、刷新、末页删空回退）
+const { deleteRow, deleteRows: onDelete } = useGvaGridDelete(gridRef, {
+    delete: (rows) => {
+      if (rows.length === 1) {
+        return delete{{.StructName}}({ {{.PrimaryField.FieldJson}}: rows[0].{{.PrimaryField.FieldJson}} })
       }
-      multipleSelection.value &&
-        multipleSelection.value.map(item => {
-          {{.PrimaryField.FieldJson}}s.push(item.{{.PrimaryField.FieldJson}})
-        })
-      const res = await delete{{.StructName}}ByIds({ {{.PrimaryField.FieldJson}}s })
-      if (res.code === 0) {
-        ElMessage({
-          type: 'success',
-          message: '删除成功'
-        })
-        if (tableData.value.length === {{.PrimaryField.FieldJson}}s.length && page.value > 1) {
-          page.value--
-        }
-        getTableData()
-      }
-      })
-    }
+      return delete{{.StructName}}ByIds({ {{.PrimaryField.FieldJson}}s: rows.map((item) => item.{{.PrimaryField.FieldJson}}) })
+    },
+    confirmText: '确定要删除吗?',
+    successText: '删除成功'
+})
 
 // 行为控制标记（弹窗内部需要增还是改）
 const type = ref('')
@@ -558,22 +438,6 @@ const update{{.StructName}}Func = async(row) => {
     if (res.code === 0) {
         formData.value = res.data
         dialogFormVisible.value = true
-    }
-}
-
-
-// 删除行
-const delete{{.StructName}}Func = async (row) => {
-    const res = await delete{{.StructName}}({ {{.PrimaryField.FieldJson}}: row.{{.PrimaryField.FieldJson}} })
-    if (res.code === 0) {
-        ElMessage({
-                type: 'success',
-                message: '删除成功'
-            })
-            if (tableData.value.length === 1 && page.value > 1) {
-            page.value--
-        }
-        getTableData()
     }
 }
 
@@ -624,7 +488,7 @@ const enterDialog = async () => {
                   message: '创建/更改成功'
                 })
                 closeDialog()
-                getTableData()
+                refresh()
               }
       })
 }

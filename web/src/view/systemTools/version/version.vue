@@ -1,84 +1,18 @@
 <template>
   <div>
-    <div class="gva-search-box">
-      <el-form ref="elSearchFormRef" :inline="true" :model="searchInfo" class="demo-form-inline"
-        @keyup.enter="onSubmit">
-        <el-form-item label="创建日期" prop="createdAtRange">
-          <template #label>
-            <span>
-              创建日期
-              <el-tooltip content="搜索范围是开始日期（包含）至结束日期（不包含）">
-                <el-icon>
-                  <QuestionFilled />
-                </el-icon>
-              </el-tooltip>
-            </span>
-          </template>
-
-          <el-date-picker v-model="searchInfo.createdAtRange" class="w-[380px]" type="datetimerange" range-separator="至"
-            start-placeholder="开始时间" end-placeholder="结束时间" />
-        </el-form-item>
-
-        <el-form-item label="版本名称" prop="versionName">
-          <el-input v-model="searchInfo.versionName" placeholder="搜索条件" />
-        </el-form-item>
-
-        <el-form-item label="版本号" prop="versionCode">
-          <el-input v-model="searchInfo.versionCode" placeholder="搜索条件" />
-        </el-form-item>
-
-
-
-        <template v-if="showAllQuery">
-          <!-- 将需要控制显示状态的查询条件添加到此范围内 -->
-        </template>
-
-        <el-form-item>
-          <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
-          <el-button icon="refresh" @click="onReset">重置</el-button>
-          <el-button link type="primary" icon="arrow-down" @click="showAllQuery = true"
-            v-if="!showAllQuery">展开</el-button>
-          <el-button link type="primary" icon="arrow-up" @click="showAllQuery = false" v-else>收起</el-button>
-        </el-form-item>
-      </el-form>
-    </div>
-    <div class="gva-table-box">
-      <div class="gva-btn-list">
+    <GvaGrid ref="gridRef" v-bind="gridOptions" v-on="gridEvents">
+      <template #toolbar-buttons>
         <el-button type="success" icon="download" @click="openExportDialog">创建发版</el-button>
         <el-button type="warning" icon="upload" @click="openImportDialog">导入版本</el-button>
-        <el-button icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length"
-          @click="onDelete">删除</el-button>
-      </div>
-      <el-table ref="multipleTable" style="width: 100%" tooltip-effect="dark" :data="tableData" row-key="ID"
-        @selection-change="handleSelectionChange">
-        <el-table-column type="selection" width="55" />
+        <el-button icon="delete" :disabled="!selectedRows.length" @click="onDelete">删除</el-button>
+      </template>
 
-        <el-table-column sortable align="left" label="日期" prop="CreatedAt" width="180">
-          <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
-        </el-table-column>
-
-        <el-table-column align="left" label="版本名称" prop="versionName" width="120" />
-
-        <el-table-column align="left" label="版本号" prop="versionCode" width="120" />
-
-        <el-table-column align="left" label="操作" fixed="right" min-width="320">
-          <template #default="scope">
-            <el-button type="primary" link class="table-button" @click="getDetails(scope.row)"><el-icon
-                style="margin-right: 5px">
-                <InfoFilled />
-              </el-icon>查看</el-button>
-            <el-button type="success" link icon="download" class="table-button"
-              @click="downloadJson(scope.row)">下载发版包</el-button>
-            <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      <div class="gva-pagination">
-        <el-pagination layout="total, sizes, prev, pager, next, jumper" :current-page="page" :page-size="pageSize"
-          :page-sizes="[10, 30, 50, 100]" :total="total" @current-change="handleCurrentChange"
-          @size-change="handleSizeChange" />
-      </div>
-    </div>
+      <template #operate="{ row }">
+        <el-button type="primary" link icon="info-filled" @click="getDetails(row)">查看</el-button>
+        <el-button type="success" link icon="download" @click="downloadJson(row)">下载发版包</el-button>
+        <el-button type="primary" link icon="delete" @click="deleteRow(row)">删除</el-button>
+      </template>
+    </GvaGrid>
 
     <el-drawer destroy-on-close :size="appStore.drawerSize" v-model="detailShow" :show-close="true"
       :before-close="closeDetailShow" title="查看">
@@ -325,6 +259,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
 import { ref, watch } from 'vue'
 import { useAppStore } from "@/pinia"
+import GvaGrid, { useGvaGrid, useGvaGridDelete } from '@/components/gvaGrid'
 
 defineOptions({
   name: 'SysVersion'
@@ -332,8 +267,28 @@ defineOptions({
 
 const appStore = useAppStore()
 
-// 控制更多查询条件显示/隐藏状态
-const showAllQuery = ref(false)
+const { gridRef, gridOptions, gridEvents, selectedRows, refresh } = useGvaGrid({
+  id: 'systemTools-version',
+  api: getSysVersionList,
+  defaultSort: null,
+  checkbox: true,
+  searchItems: [
+    {
+      field: 'createdAtRange',
+      title: '创建日期',
+      span: 8,
+      itemRender: { name: 'gvaDateRange', props: { type: 'datetimerange', valueFormat: 'YYYY-MM-DD HH:mm:ss' } }
+    },
+    { field: 'versionName', title: '版本名称', span: 6, itemRender: { name: 'VxeInput', props: { placeholder: '搜索条件', clearable: true } } },
+    { field: 'versionCode', title: '版本号', span: 6, itemRender: { name: 'VxeInput', props: { placeholder: '搜索条件', clearable: true } } }
+  ],
+  columns: [
+    { field: 'CreatedAt', title: '日期', width: 180, sortable: true, cellRender: { name: 'gvaDate' } },
+    { field: 'versionName', title: '版本名称', width: 120 },
+    { field: 'versionCode', title: '版本号', width: 120 },
+    { title: '操作', fixed: 'right', slots: { default: 'operate' } }
+  ]
+})
 
 // 导出相关数据
 const exportDialogVisible = ref(false)
@@ -404,121 +359,14 @@ const previewDictTreeData = ref([])
 
 
 
-const elSearchFormRef = ref()
-
-// =========== 表格控制部分 ===========
-const page = ref(1)
-const total = ref(0)
-const pageSize = ref(10)
-const tableData = ref([])
-const searchInfo = ref({})
-// 重置
-const onReset = () => {
-  searchInfo.value = {}
-  getTableData()
-}
-
-// 搜索
-const onSubmit = () => {
-  elSearchFormRef.value?.validate(async (valid) => {
-    if (!valid) return
-    page.value = 1
-    getTableData()
-  })
-}
-
-// 分页
-const handleSizeChange = (val) => {
-  pageSize.value = val
-  getTableData()
-}
-
-// 修改页面容量
-const handleCurrentChange = (val) => {
-  page.value = val
-  getTableData()
-}
-
-// 查询
-const getTableData = async () => {
-  const table = await getSysVersionList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
-  if (table.code === 0) {
-    tableData.value = table.data.list
-    total.value = table.data.total
-    page.value = table.data.page
-    pageSize.value = table.data.pageSize
-  }
-}
-
-getTableData()
-
-// ============== 表格控制部分结束 ===============
-
-// 多选数据
-const multipleSelection = ref([])
-// 多选
-const handleSelectionChange = (val) => {
-  multipleSelection.value = val
-}
-
-// 删除行
-const deleteRow = (row) => {
-  ElMessageBox.confirm('确定要删除吗?', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    deleteSysVersionFunc(row)
-  })
-}
-
-// 多选删除
-const onDelete = async () => {
-  ElMessageBox.confirm('确定要删除吗?', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(async () => {
-    const IDs = []
-    if (multipleSelection.value.length === 0) {
-      ElMessage({
-        type: 'warning',
-        message: '请选择要删除的数据'
-      })
-      return
-    }
-    multipleSelection.value &&
-      multipleSelection.value.map(item => {
-        IDs.push(item.ID)
-      })
-    const res = await deleteSysVersionByIds({ IDs })
-    if (res.code === 0) {
-      ElMessage({
-        type: 'success',
-        message: '删除成功'
-      })
-      if (tableData.value.length === IDs.length && page.value > 1) {
-        page.value--
-      }
-      getTableData()
-    }
-  })
-}
-
-// 删除行
-const deleteSysVersionFunc = async (row) => {
-  const res = await deleteSysVersion({ ID: row.ID })
-  if (res.code === 0) {
-    ElMessage({
-      type: 'success',
-      message: '删除成功'
-    })
-    if (tableData.value.length === 1 && page.value > 1) {
-      page.value--
-    }
-    getTableData()
-  }
-}
+const { deleteRow, deleteRows: onDelete } = useGvaGridDelete(gridRef, {
+  delete: (rows) => {
+    if (rows.length === 1) return deleteSysVersion({ ID: rows[0].ID })
+    return deleteSysVersionByIds({ IDs: rows.map((item) => item.ID) })
+  },
+  confirmText: '确定要删除吗?',
+  successText: '删除成功'
+})
 
 const detailForm = ref({})
 
@@ -738,7 +586,7 @@ const handleExport = async () => {
 
     ElMessage.success('创建发版成功')
     closeExportDialog()
-    getTableData() // 刷新表格数据
+    refresh() // 刷新表格数据
   } catch (error) {
     console.error('创建发版失败:', error)
     ElMessage.error('创建发版失败')
@@ -902,7 +750,7 @@ const handleImport = async () => {
     if (res.code === 0) {
       ElMessage.success('导入成功')
       closeImportDialog()
-      getTableData() // 刷新表格数据
+      refresh() // 刷新表格数据
     } else {
       ElMessage.error(res.msg || '导入失败')
     }

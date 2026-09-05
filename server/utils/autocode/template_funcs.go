@@ -17,6 +17,10 @@ func GetTemplateFuncMap() template.FuncMap {
 		"GenerateSearchConditions": GenerateSearchConditions,
 		"GenerateSearchFormItem":   GenerateSearchFormItem,
 		"GenerateTableColumn":      GenerateTableColumn,
+		"GenerateGridColumnSchema": GenerateGridColumnSchema,
+		"GenerateGridColumnSlot":   GenerateGridColumnSlot,
+		"GenerateGridSearchItem":   GenerateGridSearchItem,
+		"GenerateGridSearchItemSlot": GenerateGridSearchItemSlot,
 		"GenerateFormItem":         GenerateFormItem,
 		"GenerateDescriptionItem":  GenerateDescriptionItem,
 		"GenerateDefaultFormValue": GenerateDefaultFormValue,
@@ -709,5 +713,152 @@ func GenerateSearchField(field systemReq.AutoCodeField) string {
 		}
 	}
 
+	return result
+}
+
+// GenerateGridColumnSchema 生成 GvaGrid 列 schema（JS 对象字面量，用于 columns 数组）
+// 复杂展示类型（关联数据/字典数组/多媒体/文件等）生成插槽引用，模板片段由 GenerateGridColumnSlot 输出
+func GenerateGridColumnSchema(field systemReq.AutoCodeField) string {
+	sortable := ""
+	if field.Sort {
+		sortable = " sortable: true,"
+	}
+	// 插槽型列
+	if field.CheckDataSource || (field.DictType != "" && field.FieldType == "array") ||
+		field.FieldType == "pictures" || field.FieldType == "video" ||
+		field.FieldType == "richtext" || field.FieldType == "file" ||
+		field.FieldType == "json" || field.FieldType == "array" {
+		return fmt.Sprintf("      { field: '%s', title: '%s',%s width: 200, slots: { default: 'col-%s' } },",
+			field.FieldJson, field.FieldDesc, sortable, field.FieldJson)
+	}
+	// 字典单值
+	if field.DictType != "" {
+		return fmt.Sprintf("      { field: '%s', title: '%s',%s width: 120, cellRender: { name: 'gvaDict', props: { dict: '%s' } } },",
+			field.FieldJson, field.FieldDesc, sortable, field.DictType)
+	}
+	// 布尔
+	if field.FieldType == "bool" {
+		return fmt.Sprintf("      { field: '%s', title: '%s',%s width: 120, formatter: ({ cellValue }) => formatBoolean(cellValue) },",
+			field.FieldJson, field.FieldDesc, sortable)
+	}
+	// 时间
+	if field.FieldType == "time.Time" {
+		return fmt.Sprintf("      { field: '%s', title: '%s',%s width: 180, cellRender: { name: 'gvaDate' } },",
+			field.FieldJson, field.FieldDesc, sortable)
+	}
+	// 图片
+	if field.FieldType == "picture" {
+		return fmt.Sprintf("      { field: '%s', title: '%s',%s width: 120, cellRender: { name: 'gvaImage', props: { width: 100, height: 100 } } },",
+			field.FieldJson, field.FieldDesc, sortable)
+	}
+	// 默认文本列
+	return fmt.Sprintf("      { field: '%s', title: '%s',%s minWidth: 120 },",
+		field.FieldJson, field.FieldDesc, sortable)
+}
+
+// GenerateGridColumnSlot 生成 GvaGrid 列插槽模板片段（仅插槽型列需要）
+func GenerateGridColumnSlot(field systemReq.AutoCodeField) string {
+	result := fmt.Sprintf("      <template #col-%s=\"{ row }\">\n", field.FieldJson)
+	if field.CheckDataSource {
+		if field.DataSource.Association == 2 {
+			result += fmt.Sprintf("        <el-tag v-for=\"(item,key) in filterDataSource(dataSource.%s,row.%s)\" :key=\"key\">{{ item }}</el-tag>\n",
+				field.FieldJson, field.FieldJson)
+		} else {
+			result += fmt.Sprintf("        <span>{{ filterDataSource(dataSource.%s,row.%s) }}</span>\n",
+				field.FieldJson, field.FieldJson)
+		}
+	} else if field.DictType != "" && field.FieldType == "array" {
+		result += fmt.Sprintf("        <el-tag class=\"mr-1\" v-for=\"item in row.%s\" :key=\"item\">{{ filterDict(item,%sOptions) }}</el-tag>\n",
+			field.FieldJson, field.DictType)
+	} else if field.FieldType == "pictures" {
+		result += `        <div class="multiple-img-box">
+`
+		result += fmt.Sprintf("          <el-image preview-teleported v-for=\"(item,index) in row.%s\" :key=\"index\" style=\"width: 80px; height: 80px\" :src=\"getUrl(item)\" fit=\"cover\"/>\n",
+			field.FieldJson)
+		result += "        </div>\n"
+	} else if field.FieldType == "video" {
+		result += `        <video style="width: 100px; height: 100px" muted preload="metadata">
+`
+		result += fmt.Sprintf("          <source :src=\"getUrl(row.%s) + '#t=1'\">\n", field.FieldJson)
+		result += "        </video>\n"
+	} else if field.FieldType == "richtext" {
+		result += "        [富文本内容]\n"
+	} else if field.FieldType == "file" {
+		result += `        <div class="file-list">
+`
+		result += fmt.Sprintf("          <el-tag v-for=\"file in row.%s\" :key=\"file.uid\" @click=\"onDownloadFile(file.url)\">{{ file.name }}</el-tag>\n",
+			field.FieldJson)
+		result += "        </div>\n"
+	} else if field.FieldType == "json" {
+		result += "        [JSON]\n"
+	} else if field.FieldType == "array" {
+		result += fmt.Sprintf("        <ArrayCtrl v-model=\"row.%s\"/>\n", field.FieldJson)
+	}
+	result += "      </template>\n"
+	return result
+}
+
+// GenerateGridSearchItem 生成 GvaGrid 查询项 schema（JS 对象字面量，用于 searchItems 数组）
+// 复杂查询控件（字典树选/关联选择/数值范围）生成插槽引用，模板片段由 GenerateGridSearchItemSlot 输出
+func GenerateGridSearchItem(field systemReq.AutoCodeField) string {
+	title := field.FieldDesc
+	// 字典/关联/数值范围 → 插槽
+	if field.DictType != "" || field.CheckDataSource {
+		return fmt.Sprintf("      { field: '%s', title: '%s', span: 6, itemRender: { name: 'slot' } },",
+			field.FieldJson, title)
+	}
+	if (field.FieldType == "int" || field.FieldType == "float64") &&
+		(field.FieldSearchType == "BETWEEN" || field.FieldSearchType == "NOT BETWEEN") {
+		return fmt.Sprintf("      { field: '%s', title: '%s', span: 8, itemRender: { name: 'slot' } },",
+			field.FieldJson, title)
+	}
+	// 时间范围 → gvaDateRange（保持 xxxRange 数组出参，与后端约定一致）
+	if field.FieldType == "time.Time" {
+		if field.FieldSearchType == "BETWEEN" || field.FieldSearchType == "NOT BETWEEN" {
+			return fmt.Sprintf("      { field: '%sRange', title: '%s', span: 8, itemRender: { name: 'gvaDateRange', props: { type: 'datetimerange', valueFormat: 'YYYY-MM-DD HH:mm:ss' } } },",
+				field.FieldJson, title)
+		}
+		return fmt.Sprintf("      { field: '%s', title: '%s', span: 6, itemRender: { name: 'gvaDateRange', props: { type: 'datetime', valueFormat: 'YYYY-MM-DD HH:mm:ss' } } },",
+			field.FieldJson, title)
+	}
+	// 布尔
+	if field.FieldType == "bool" {
+		return fmt.Sprintf("      { field: '%s', title: '%s', span: 6, itemRender: { name: 'VxeSelect', props: { placeholder: '请选择', clearable: true, options: [{ label: '是', value: true }, { label: '否', value: false }] } } },",
+			field.FieldJson, title)
+	}
+	// 默认文本
+	return fmt.Sprintf("      { field: '%s', title: '%s', span: 6, itemRender: { name: 'VxeInput', props: { placeholder: '搜索条件', clearable: true } } },",
+		field.FieldJson, title)
+}
+
+// GenerateGridSearchItemSlot 生成 GvaGrid 查询项插槽模板片段（仅插槽型查询项需要）
+func GenerateGridSearchItemSlot(field systemReq.AutoCodeField) string {
+	result := fmt.Sprintf("      <template #form-%s=\"{ data }\">\n", field.FieldJson)
+	if field.DictType != "" {
+		multipleAttr := ""
+		if field.FieldType == "array" {
+			multipleAttr = "multiple "
+		}
+		result += fmt.Sprintf("        <el-tree-select v-model=\"data.%s\" placeholder=\"请选择%s\" :data=\"%sOptions\" style=\"width:100%%%%\" filterable :clearable=\"%v\" check-strictly %s></el-tree-select>\n",
+			field.FieldJson, field.FieldDesc, field.DictType, field.Clearable, multipleAttr)
+	} else if field.CheckDataSource {
+		multipleAttr := ""
+		if field.DataSource.Association == 2 {
+			multipleAttr = "multiple "
+		}
+		result += fmt.Sprintf("        <el-select %sv-model=\"data.%s\" filterable placeholder=\"请选择%s\" :clearable=\"%v\">\n",
+			multipleAttr, field.FieldJson, field.FieldDesc, field.Clearable)
+		result += fmt.Sprintf("          <el-option v-for=\"(item,key) in dataSource.%s\" :key=\"key\" :label=\"item.label\" :value=\"item.value\" />\n",
+			field.FieldJson)
+		result += "        </el-select>\n"
+	} else if (field.FieldType == "int" || field.FieldType == "float64") &&
+		(field.FieldSearchType == "BETWEEN" || field.FieldSearchType == "NOT BETWEEN") {
+		result += fmt.Sprintf("        <el-input class=\"!w-40\" v-model.number=\"data.start%s\" placeholder=\"最小值\" />\n",
+			field.FieldName)
+		result += "        —\n"
+		result += fmt.Sprintf("        <el-input class=\"!w-40\" v-model.number=\"data.end%s\" placeholder=\"最大值\" />\n",
+			field.FieldName)
+	}
+	result += "      </template>\n"
 	return result
 }

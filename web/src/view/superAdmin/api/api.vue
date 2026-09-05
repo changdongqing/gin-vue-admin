@@ -1,148 +1,30 @@
 <template>
   <div>
-    <div class="gva-search-box">
-      <el-form ref="searchForm" :inline="true" :model="searchInfo">
-        <el-form-item label="路径">
-          <el-input v-model="searchInfo.path" placeholder="路径" />
-        </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="searchInfo.description" placeholder="描述" />
-        </el-form-item>
-        <el-form-item label="API分组">
-          <el-select
-            v-model="searchInfo.apiGroup"
-            clearable
-            placeholder="请选择"
-          >
-            <el-option
-              v-for="item in apiGroupOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="请求">
-          <el-select v-model="searchInfo.method" clearable placeholder="请选择">
-            <el-option
-              v-for="item in methodOptions"
-              :key="item.value"
-              :label="`${item.label}(${item.value})`"
-              :value="item.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" icon="search" @click="onSubmit">
-            查询
-          </el-button>
-          <el-button icon="refresh" @click="onReset"> 重置 </el-button>
-        </el-form-item>
-      </el-form>
-    </div>
-    <div class="gva-table-box">
-      <div class="gva-btn-list">
-        <el-button type="primary" icon="plus" @click="openDialog('addApi')">
-          新增
-        </el-button>
-        <el-button icon="delete" :disabled="!apis.length" @click="onDelete">
+    <GvaGrid ref="gridRef" v-bind="gridOptions" v-on="gridEvents">
+      <template #toolbar-buttons>
+        <el-button type="primary" icon="plus" @click="openDialog('addApi')">新增</el-button>
+        <el-button icon="delete" :disabled="!selectedRows.length" @click="onBatchDelete(selectedRows)">
           删除
         </el-button>
         <el-button icon="Refresh" @click="onFresh"> 刷新缓存 </el-button>
         <el-button icon="Compass" @click="onSync"> 同步API </el-button>
         <ExportTemplate template-id="api" />
         <ExportExcel template-id="api" :limit="9999" />
-        <ImportExcel template-id="api" @on-success="getTableData" />
-      </div>
-      <el-table
-        :data="tableData"
-        @sort-change="sortChange"
-        @selection-change="handleSelectionChange"
-      >
-        <el-table-column type="selection" width="55" />
-        <el-table-column
-          align="left"
-          label="ID"
-          min-width="60"
-          prop="ID"
-          sortable="custom"
-        />
-        <el-table-column
-          align="left"
-          label="API路径"
-          min-width="150"
-          prop="path"
-          sortable="custom"
-        />
-        <el-table-column
-          align="left"
-          label="API分组"
-          min-width="150"
-          prop="apiGroup"
-          sortable="custom"
-        />
-        <el-table-column
-          align="left"
-          label="API简介"
-          min-width="150"
-          prop="description"
-          sortable="custom"
-        />
-        <el-table-column
-          align="left"
-          label="请求"
-          min-width="150"
-          prop="method"
-          sortable="custom"
-        >
-          <template #default="scope">
-            <div>
-              {{ scope.row.method }} / {{ methodFilter(scope.row.method) }}
-            </div>
-          </template>
-        </el-table-column>
+        <ImportExcel template-id="api" @on-success="refresh" />
+      </template>
 
-        <el-table-column align="left" fixed="right" label="操作" :min-width="appStore.operateMinWith">
-          <template #default="scope">
-            <el-button
-              icon="edit"
-              type="primary"
-              link
-              @click="editApiFunc(scope.row)"
-            >
-              编辑
-            </el-button>
-            <el-button
-              icon="user"
-              type="primary"
-              link
-              @click="openAssignRoleDrawer(scope.row)"
-            >
-              分配角色
-            </el-button>
-            <el-button
-              icon="delete"
-              type="primary"
-              link
-              @click="deleteApiFunc(scope.row)"
-            >
-              删除
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      <div class="gva-pagination">
-        <el-pagination
-          :current-page="page"
-          :page-size="pageSize"
-          :page-sizes="[10, 30, 50, 100]"
-          :total="total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @current-change="handleCurrentChange"
-          @size-change="handleSizeChange"
-        />
-      </div>
-    </div>
+      <template #method="{ row }">
+        <div>
+          {{ row.method }} / {{ methodFilter(row.method) }}
+        </div>
+      </template>
+
+      <template #operate="{ row }">
+        <el-button icon="edit" type="primary" link @click="editApiFunc(row)">编辑</el-button>
+        <el-button icon="user" type="primary" link @click="openAssignRoleDrawer(row)">分配角色</el-button>
+        <el-button icon="delete" type="primary" link @click="deleteApiRow(row)">删除</el-button>
+      </template>
+    </GvaGrid>
 
     <el-drawer
       v-model="syncApiFlag"
@@ -157,14 +39,8 @@
         <div class="flex justify-between items-center">
           <span class="text-lg">同步路由</span>
           <div>
-            <el-button :loading="apiCompletionLoading" @click="closeSyncDialog">
-              取 消
-            </el-button>
-            <el-button
-              type="primary"
-              :loading="syncing || apiCompletionLoading"
-              @click="enterSyncDialog"
-            >
+            <el-button :loading="apiCompletionLoading" @click="closeSyncDialog">取 消</el-button>
+            <el-button type="primary" :loading="syncing || apiCompletionLoading" @click="enterSyncDialog">
               确 定
             </el-button>
           </div>
@@ -173,9 +49,7 @@
 
       <h4>
         新增路由
-        <span class="text-xs text-gray-500 mx-2 font-normal"
-          >存在于当前路由中，但是不存在于api表</span
-        >
+        <span class="text-xs text-gray-500 mx-2 font-normal">存在于当前路由中，但是不存在于api表</span>
         <el-button type="primary" size="small" @click="apiCompletion">
           <el-icon size="18">
             <ai-gva />
@@ -188,26 +62,10 @@
         element-loading-text="小淼正在思考..."
         :data="syncApiData.newApis"
       >
-        <el-table-column
-          align="left"
-          label="API路径"
-          min-width="150"
-          prop="path"
-        />
-        <el-table-column
-          align="left"
-          label="API分组"
-          min-width="150"
-          prop="apiGroup"
-        >
+        <el-table-column align="left" label="API路径" min-width="150" prop="path" />
+        <el-table-column align="left" label="API分组" min-width="150" prop="apiGroup">
           <template #default="{ row }">
-            <el-select
-              v-model="row.apiGroup"
-              placeholder="请选择或新增"
-              allow-create
-              filterable
-              default-first-option
-            >
+            <el-select v-model="row.apiGroup" placeholder="请选择或新增" allow-create filterable default-first-option>
               <el-option
                 v-for="item in apiGroupOptions"
                 :key="item.value"
@@ -217,22 +75,12 @@
             </el-select>
           </template>
         </el-table-column>
-        <el-table-column
-          align="left"
-          label="API简介"
-          min-width="150"
-          prop="description"
-        >
+        <el-table-column align="left" label="API简介" min-width="150" prop="description">
           <template #default="{ row }">
             <el-input v-model="row.description" autocomplete="off" />
           </template>
         </el-table-column>
-        <el-table-column
-          align="left"
-          label="请求"
-          min-width="150"
-          prop="method"
-        >
+        <el-table-column align="left" label="请求" min-width="150" prop="method">
           <template #default="scope">
             <div>
               {{ scope.row.method }} / {{ methodFilter(scope.row.method) }}
@@ -241,17 +89,8 @@
         </el-table-column>
         <el-table-column label="操作" min-width="150" fixed="right">
           <template #default="{ row }">
-            <el-button icon="plus" type="primary" link @click="addApiFunc(row)">
-              单条新增
-            </el-button>
-            <el-button
-              icon="sunrise"
-              type="primary"
-              link
-              @click="ignoreApiFunc(row, true)"
-            >
-              忽略
-            </el-button>
+            <el-button icon="plus" type="primary" link @click="addApiFunc(row)">单条新增</el-button>
+            <el-button icon="sunrise" type="primary" link @click="ignoreApiFunc(row, true)">忽略</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -263,30 +102,10 @@
         >
       </h4>
       <el-table :data="syncApiData.deleteApis">
-        <el-table-column
-          align="left"
-          label="API路径"
-          min-width="150"
-          prop="path"
-        />
-        <el-table-column
-          align="left"
-          label="API分组"
-          min-width="150"
-          prop="apiGroup"
-        />
-        <el-table-column
-          align="left"
-          label="API简介"
-          min-width="150"
-          prop="description"
-        />
-        <el-table-column
-          align="left"
-          label="请求"
-          min-width="150"
-          prop="method"
-        >
+        <el-table-column align="left" label="API路径" min-width="150" prop="path" />
+        <el-table-column align="left" label="API分组" min-width="150" prop="apiGroup" />
+        <el-table-column align="left" label="API简介" min-width="150" prop="description" />
+        <el-table-column align="left" label="请求" min-width="150" prop="method">
           <template #default="scope">
             <div>
               {{ scope.row.method }} / {{ methodFilter(scope.row.method) }}
@@ -302,30 +121,10 @@
         >
       </h4>
       <el-table :data="syncApiData.ignoreApis">
-        <el-table-column
-          align="left"
-          label="API路径"
-          min-width="150"
-          prop="path"
-        />
-        <el-table-column
-          align="left"
-          label="API分组"
-          min-width="150"
-          prop="apiGroup"
-        />
-        <el-table-column
-          align="left"
-          label="API简介"
-          min-width="150"
-          prop="description"
-        />
-        <el-table-column
-          align="left"
-          label="请求"
-          min-width="150"
-          prop="method"
-        >
+        <el-table-column align="left" label="API路径" min-width="150" prop="path" />
+        <el-table-column align="left" label="API分组" min-width="150" prop="apiGroup" />
+        <el-table-column align="left" label="API简介" min-width="150" prop="description" />
+        <el-table-column align="left" label="请求" min-width="150" prop="method">
           <template #default="scope">
             <div>
               {{ scope.row.method }} / {{ methodFilter(scope.row.method) }}
@@ -334,14 +133,7 @@
         </el-table-column>
         <el-table-column label="操作" min-width="150" fixed="right">
           <template #default="{ row }">
-            <el-button
-              icon="sunny"
-              type="primary"
-              link
-              @click="ignoreApiFunc(row, false)"
-            >
-              取消忽略
-            </el-button>
+            <el-button icon="sunny" type="primary" link @click="ignoreApiFunc(row, false)">取消忽略</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -369,11 +161,7 @@
           <el-input v-model="form.path" autocomplete="off" />
         </el-form-item>
         <el-form-item label="请求" prop="method">
-          <el-select
-            v-model="form.method"
-            placeholder="请选择"
-            style="width: 100%"
-          >
+          <el-select v-model="form.method" placeholder="请选择" style="width: 100%">
             <el-option
               v-for="item in methodOptions"
               :key="item.value"
@@ -383,13 +171,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="api分组" prop="apiGroup">
-          <el-select
-            v-model="form.apiGroup"
-            placeholder="请选择或新增"
-            allow-create
-            filterable
-            default-first-option
-          >
+          <el-select v-model="form.apiGroup" placeholder="请选择或新增" allow-create filterable default-first-option>
             <el-option
               v-for="item in apiGroupOptions"
               :key="item.value"
@@ -452,15 +234,15 @@
     setApiRoles
   } from '@/api/api'
   import { getAuthorityList } from '@/api/authority'
-  import { toSQLLine } from '@/utils/stringFun'
+  import GvaGrid, { useGvaGrid, useGvaGridDelete } from '@/components/gvaGrid'
   import WarningBar from '@/components/warningBar/warningBar.vue'
-  import { ref, nextTick } from 'vue'
+  import { ref, reactive, nextTick } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import ExportExcel from '@/components/exportExcel/exportExcel.vue'
   import ExportTemplate from '@/components/exportExcel/exportTemplate.vue'
   import ImportExcel from '@/components/exportExcel/importExcel.vue'
   import { llmAuto } from '@/api/autoCode'
-  import { useAppStore } from "@/pinia";
+  import { useAppStore } from '@/pinia'
 
   defineOptions({
     name: 'Api'
@@ -473,7 +255,6 @@
     return target && `${target.label}`
   }
 
-  const apis = ref([])
   const form = ref({
     path: '',
     apiGroup: '',
@@ -511,13 +292,10 @@
     description: [{ required: true, message: '请输入api介绍', trigger: 'blur' }]
   })
 
-  const page = ref(1)
-  const total = ref(0)
-  const pageSize = ref(10)
-  const tableData = ref([])
-  const searchInfo = ref({})
   const apiGroupOptions = ref([])
   const apiGroupMap = ref({})
+  // 查询区下拉选项（reactive：异步加载后 vxe 下拉自动更新）
+  const apiGroupSearchOptions = reactive([])
 
   const getGroup = async () => {
     const res = await getApiGroups()
@@ -527,6 +305,7 @@
         label: item,
         value: item
       }))
+      apiGroupSearchOptions.splice(0, apiGroupSearchOptions.length, ...apiGroupOptions.value)
       apiGroupMap.value = res.data.apiGroupMap
     }
   }
@@ -578,7 +357,7 @@
         (item) => !(item.path === row.path && item.method === row.method)
       )
     }
-    getTableData()
+    refresh()
     getGroup()
   }
 
@@ -589,11 +368,7 @@
   const syncing = ref(false)
 
   const enterSyncDialog = async () => {
-    if (
-      syncApiData.value.newApis.some(
-        (item) => !item.apiGroup || !item.description
-      )
-    ) {
+    if (syncApiData.value.newApis.some((item) => !item.apiGroup || !item.description)) {
       ElMessage({
         type: 'error',
         message: '存在API未分组或未填写描述'
@@ -610,86 +385,67 @@
         message: res.msg
       })
       syncApiFlag.value = false
-      getTableData()
+      refresh()
     }
   }
 
-  const onReset = () => {
-    searchInfo.value = {}
-    getTableData()
-  }
-  // 搜索
-
-  const onSubmit = () => {
-    page.value = 1
-    getTableData()
-  }
-
-  // 分页
-  const handleSizeChange = (val) => {
-    pageSize.value = val
-    getTableData()
-  }
-
-  const handleCurrentChange = (val) => {
-    page.value = val
-    getTableData()
-  }
-
-  // 排序
-  const sortChange = ({ prop, order }) => {
-    if (prop) {
-      if (prop === 'ID') {
-        prop = 'id'
-      }
-      searchInfo.value.orderKey = toSQLLine(prop)
-      searchInfo.value.desc = order === 'descending'
-    }
-    getTableData()
-  }
-
-  // 查询
-  const getTableData = async () => {
-    const table = await getApiList({
-      page: page.value,
-      pageSize: pageSize.value,
-      ...searchInfo.value
-    })
-    if (table.code === 0) {
-      tableData.value = table.data.list
-      total.value = table.data.total
-      page.value = table.data.page
-      pageSize.value = table.data.pageSize
-    }
-  }
-
-  getTableData()
-  getGroup()
-  // 批量操作
-  const handleSelectionChange = (val) => {
-    apis.value = val
-  }
-
-  const onDelete = async () => {
-    ElMessageBox.confirm('确定要删除吗?', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }).then(async () => {
-      const ids = apis.value.map((item) => item.ID)
-      const res = await deleteApisByIds({ ids })
-      if (res.code === 0) {
-        ElMessage({
-          type: 'success',
-          message: res.msg
-        })
-        if (tableData.value.length === ids.length && page.value > 1) {
-          page.value--
+  const { gridRef, gridOptions, gridEvents, selectedRows, refresh } = useGvaGrid({
+    id: 'superAdmin-api',
+    api: getApiList,
+    // 原页面初始无排序（首次点表头后才带 orderKey）
+    defaultSort: null,
+    checkbox: true,
+    searchItems: [
+      { field: 'path', title: '路径', span: 6, itemRender: { name: 'VxeInput', props: { placeholder: '路径', clearable: true } } },
+      { field: 'description', title: '描述', span: 6, itemRender: { name: 'VxeInput', props: { placeholder: '描述', clearable: true } } },
+      {
+        field: 'apiGroup',
+        title: 'API分组',
+        span: 6,
+        itemRender: {
+          name: 'VxeSelect',
+          props: { placeholder: '请选择', clearable: true, options: apiGroupSearchOptions }
         }
-        getTableData()
+      },
+      {
+        field: 'method',
+        title: '请求',
+        span: 6,
+        itemRender: {
+          name: 'VxeSelect',
+          props: {
+            placeholder: '请选择',
+            clearable: true,
+            options: methodOptions.value.map((item) => ({
+              label: `${item.label}(${item.value})`,
+              value: item.value
+            }))
+          }
+        }
       }
-    })
-  }
+    ],
+    columns: [
+      { field: 'ID', title: 'ID', width: 80, sortable: true },
+      { field: 'path', title: 'API路径', minWidth: 150, sortable: true },
+      { field: 'apiGroup', title: 'API分组', minWidth: 150, sortable: true },
+      { field: 'description', title: 'API简介', minWidth: 150, sortable: true },
+      { field: 'method', title: '请求', minWidth: 150, sortable: true, slots: { default: 'method' } },
+      { title: '操作', fixed: 'right', slots: { default: 'operate' } }
+    ]
+  })
+
+  const { deleteRow: deleteApiRow } = useGvaGridDelete(gridRef, {
+    delete: (rows) => deleteApi(rows[0]),
+    confirmText: '此操作将永久删除所有角色下该api, 是否继续?',
+    successText: '删除成功!'
+  })
+
+  const { deleteRows: onBatchDelete } = useGvaGridDelete(gridRef, {
+    delete: (rows) => deleteApisByIds({ ids: rows.map((item) => item.ID) }),
+    confirmText: '确定要删除吗?',
+    successText: (res) => res.msg
+  })
+
   const onFresh = async () => {
     ElMessageBox.confirm('确定要刷新缓存吗?', '提示', {
       confirmButtonText: '确定',
@@ -779,7 +535,7 @@
                   showClose: true
                 })
               }
-              getTableData()
+              refresh()
               getGroup()
               closeDialog()
             }
@@ -795,7 +551,7 @@
                   showClose: true
                 })
               }
-              getTableData()
+              refresh()
               closeDialog()
             }
             break
@@ -809,27 +565,6 @@
             }
             break
         }
-      }
-    })
-  }
-
-  const deleteApiFunc = async (row) => {
-    ElMessageBox.confirm('此操作将永久删除所有角色下该api, 是否继续?', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }).then(async () => {
-      const res = await deleteApi(row)
-      if (res.code === 0) {
-        ElMessage({
-          type: 'success',
-          message: '删除成功!'
-        })
-        if (tableData.value.length === 1 && page.value > 1) {
-          page.value--
-        }
-        getTableData()
-        getGroup()
       }
     })
   }
@@ -876,10 +611,7 @@
     assignApiRow.value = row
     assignRoleDrawerVisible.value = true
     assignRoleLoading.value = true
-    const [authRes, rolesRes] = await Promise.all([
-      getAuthorityList(),
-      getApiRoles(row.path, row.method)
-    ])
+    const [authRes, rolesRes] = await Promise.all([getAuthorityList(), getApiRoles(row.path, row.method)])
     if (authRes.code === 0) {
       authorityTreeData.value = authRes.data
     }
@@ -909,6 +641,8 @@
     }
     assignRoleSubmitting.value = false
   }
+
+  getGroup()
 </script>
 
 <style scoped lang="scss">

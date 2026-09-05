@@ -1,73 +1,20 @@
 <template>
   <div class="authority">
     <warning-bar title="注：右上角头像下拉可切换角色" />
-    <div class="gva-table-box">
-      <div class="gva-btn-list">
-        <el-button type="primary" icon="plus" @click="addAuthority(0)"
-          >新增角色</el-button
-        >
-      </div>
-      <el-table
-        :data="tableData"
-        :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
-        row-key="authorityId"
-        style="width: 100%"
-      >
-        <el-table-column label="角色ID" min-width="180" prop="authorityId" />
-        <el-table-column
-          align="left"
-          label="角色名称"
-          min-width="180"
-          prop="authorityName"
-        />
-        <el-table-column align="left" label="操作" width="560">
-          <template #default="scope">
-            <el-button
-              icon="setting"
-              type="primary"
-              link
-              @click="openDrawer(scope.row)"
-              >设置权限</el-button
-            >
-            <el-button
-              icon="user"
-              type="primary"
-              link
-              @click="openAssignDrawer(scope.row)"
-              >分配给用户</el-button
-            >
-            <el-button
-              icon="plus"
-              type="primary"
-              link
-              @click="addAuthority(scope.row.authorityId)"
-              >新增子角色</el-button
-            >
-            <el-button
-              icon="copy-document"
-              type="primary"
-              link
-              @click="copyAuthorityFunc(scope.row)"
-              >拷贝</el-button
-            >
-            <el-button
-              icon="edit"
-              type="primary"
-              link
-              @click="editAuthority(scope.row)"
-              >编辑</el-button
-            >
-            <el-button
-              icon="delete"
-              type="primary"
-              link
-              @click="deleteAuth(scope.row)"
-              >删除</el-button
-            >
-          </template>
-        </el-table-column>
-      </el-table>
-    </div>
+    <GvaGrid ref="gridRef" v-bind="gridOptions" v-on="gridEvents">
+      <template #toolbar-buttons>
+        <el-button type="primary" icon="plus" @click="addAuthority(0)">新增角色</el-button>
+      </template>
+
+      <template #operate="{ row }">
+        <el-button icon="setting" type="primary" link @click="openDrawer(row)">设置权限</el-button>
+        <el-button icon="user" type="primary" link @click="openAssignDrawer(row)">分配给用户</el-button>
+        <el-button icon="plus" type="primary" link @click="addAuthority(row.authorityId)">新增子角色</el-button>
+        <el-button icon="copy-document" type="primary" link @click="copyAuthorityFunc(row)">拷贝</el-button>
+        <el-button icon="edit" type="primary" link @click="editAuthority(row)">编辑</el-button>
+        <el-button icon="delete" type="primary" link @click="deleteAuth(row)">删除</el-button>
+      </template>
+    </GvaGrid>
     <!-- 新增角色弹窗 -->
     <el-drawer v-model="authorityFormVisible" :size="appStore.drawerSize" :show-close="false">
       <template #header>
@@ -134,7 +81,7 @@
         <el-tab-pane label="资源权限">
           <Datas
             ref="datas"
-            :authority="tableData"
+            :authority="authorityTree"
             :row="activeRow"
             @changeRow="changeRow"
           />
@@ -223,7 +170,7 @@
   import { ref, nextTick } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useAppStore } from "@/pinia"
-  import { toSQLLine } from '@/utils/stringFun'
+  import GvaGrid, { useGvaGrid } from '@/components/gvaGrid'
 
   defineOptions({
     name: 'Authority'
@@ -268,17 +215,26 @@
     parentId: [{ required: true, message: '请选择父角色', trigger: 'blur' }]
   })
 
-  const tableData = ref([])
-
-  // 查询
-  const getTableData = async () => {
-    const table = await getAuthorityList()
-    if (table.code === 0) {
-      tableData.value = table.data
-    }
-  }
-
-  getTableData()
+  // 角色树：无分页无搜索，接口直接返回树数组
+  const authorityTree = ref([])
+  const { gridOptions, gridEvents, refresh } = useGvaGrid({
+    id: 'superAdmin-authority',
+    pager: false,
+    defaultSort: null,
+    api: async () => {
+      const res = await getAuthorityList()
+      authorityTree.value = res.data || []
+      return { ...res, data: { list: authorityTree.value, total: authorityTree.value.length } }
+    },
+    gridConfig: {
+      treeConfig: { rowField: 'authorityId', children: 'children' }
+    },
+    columns: [
+      { field: 'authorityId', title: '角色ID', minWidth: 180, treeNode: true },
+      { field: 'authorityName', title: '角色名称', minWidth: 180 },
+      { title: '操作', width: 560, slots: { default: 'operate' } }
+    ]
+  })
 
   const changeRow = (key, value) => {
     activeRow.value[key] = value
@@ -325,7 +281,7 @@
             message: '删除成功!'
           })
 
-          getTableData()
+          refresh()
         }
       })
       .catch(() => {
@@ -368,7 +324,7 @@
                   type: 'success',
                   message: '添加成功!'
                 })
-                getTableData()
+                refresh()
                 closeAuthorityForm()
               }
             }
@@ -381,7 +337,7 @@
                   type: 'success',
                   message: '添加成功!'
                 })
-                getTableData()
+                refresh()
                 closeAuthorityForm()
               }
             }
@@ -407,7 +363,7 @@
                 type: 'success',
                 message: '复制成功！'
               })
-              getTableData()
+              refresh()
             }
           }
         }
@@ -424,7 +380,7 @@
         authorityName: '根角色(严格模式下为当前用户角色)'
       }
     ]
-    setAuthorityOptions(tableData.value, AuthorityOption.value, false)
+    setAuthorityOptions(authorityTree.value, AuthorityOption.value, false)
   }
   const setAuthorityOptions = (AuthorityData, optionsData, disabled) => {
     AuthorityData &&

@@ -1,0 +1,68 @@
+// GvaGrid 主题桥接与布局样式
+// 暗色模式：由 theme.js 同步 vxe 内置 data-vxe-ui-theme（完整明/暗变量集），无需手工映射背景变量
+// 详见 aiDoc/vxegrid/01-详细设计方案.md §14
+:root {
+  // 主色跟随 Element 运行时主题（utils/format.js setBodyPrimaryColor 动态切换）
+  --vxe-ui-primary-color: var(--el-color-primary, #4d70ff);
+}
+
+.gva-grid {
+  // 卡片外观对齐 gva-table-box
+  @apply my-2 rounded bg-white text-slate-700 dark:bg-slate-900 dark:text-slate-400;
+
+  // 尺寸对齐现有 el-table 视觉（element_visiable.scss 中 th 36px / td 32px）
+  --vxe-ui-table-row-height-default: 36px;
+  --vxe-ui-table-row-height-medium: 36px;
+  --vxe-ui-table-row-height-small: 32px;
+  --vxe-ui-table-row-height-mini: 28px;
+  --vxe-ui-table-header-padding-medium: 8px 0;
+  --vxe-ui-table-footer-padding-medium: 8px 0;
+  --vxe-ui-table-cell-padding-medium: 8px 0.6em;
+
+  // 表格边缘与旧版 .gva-table-box 内 el-table 的细边框一致
+  .vxe-table--render-wrapper {
+    border-radius: 4px;
+  }
+
+  // 工具栏：对齐旧 gva-btn-list 的间距节奏
+  .vxe-toolbar {
+    padding: 0 0 12px 0;
+  }
+
+  // 查询区底部留白与分隔
+  .vxe-grid--form-wrapper {
+    padding: 12px 0 4px 0;
+    border-bottom: 1px solid var(--el-border-color-lighter, #ebeef5);
+    margin-bottom: 12px;
+  }
+
+  // 工具栏自定义按钮（密度）
+  .gva-grid__tool-btn {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    color: inherit;
+    outline: none;
+  }
+
+  // 折叠图标旋转
+  .gva-grid__collapse-icon {
+    margin-left: 2px;
+    transition: transform 0.2s;
+    &.is-collapsed {
+      transform: rotate(-180deg);
+    }
+  }
+
+  // 分页区：对齐旧 .gva-pagination（右对齐）
+  .vxe-grid--pager-wrapper {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+// fit 测量失败的降级模式
+.gva-grid--fallback {
+  max-height: calc(100vh - 240px);
+}

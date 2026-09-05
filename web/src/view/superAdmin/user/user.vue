@@ -1,148 +1,66 @@
 <template>
   <div>
     <warning-bar title="注：右上角头像下拉可切换角色" />
-    <div class="gva-search-box">
-      <el-form ref="searchForm" :inline="true" :model="searchInfo">
-        <el-form-item label="用户名">
-          <el-input v-model="searchInfo.username" placeholder="用户名" />
-        </el-form-item>
-        <el-form-item label="昵称">
-          <el-input v-model="searchInfo.nickname" placeholder="昵称" />
-        </el-form-item>
-        <el-form-item label="手机号">
-          <el-input v-model="searchInfo.phone" placeholder="手机号" />
-        </el-form-item>
-        <el-form-item label="邮箱">
-          <el-input v-model="searchInfo.email" placeholder="邮箱" />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" icon="search" @click="onSubmit">
-            查询
-          </el-button>
-          <el-button icon="refresh" @click="onReset"> 重置 </el-button>
-        </el-form-item>
-      </el-form>
-    </div>
-    <div class="gva-table-box">
-      <div class="gva-btn-list">
-        <el-button type="primary" icon="plus" @click="addUser"
-          >新增用户</el-button
-        >
-      </div>
-      <el-table :data="tableData" row-key="ID" :default-sort="{ prop: 'ID', order: 'descending' }" @sort-change="sortChange">
-        <el-table-column align="left" label="头像" min-width="75">
-          <template #default="scope">
-            <CustomPic style="margin-top: 8px" :pic-src="scope.row.headerImg" />
-          </template>
-        </el-table-column>
-        <el-table-column align="left" label="ID" min-width="50" prop="ID" sortable="custom" />
-        <el-table-column
-          align="left"
-          label="用户名"
-          min-width="150"
-          prop="userName"
-        />
-        <el-table-column
-          align="left"
-          label="昵称"
-          min-width="150"
-          prop="nickName"
-        />
-        <el-table-column
-          align="left"
-          label="手机号"
-          min-width="180"
-          prop="phone"
-        />
-        <el-table-column
-          align="left"
-          label="邮箱"
-          min-width="180"
-          prop="email"
-        />
-        <el-table-column align="left" label="用户角色" min-width="200">
-          <template #default="scope">
-            <el-cascader
-              v-model="scope.row.authorityIds"
-              :options="authOptions"
-              :show-all-levels="false"
-              collapse-tags
-              :props="{
-                multiple: true,
-                checkStrictly: true,
-                label: 'authorityName',
-                value: 'authorityId',
-                disabled: 'disabled',
-                emitPath: false
-              }"
-              :clearable="false"
-              @visible-change="
-                (flag) => {
-                  changeAuthority(scope.row, flag, 0)
-                }
-              "
-              @remove-tag="
-                (removeAuth) => {
-                  changeAuthority(scope.row, false, removeAuth)
-                }
-              "
-            />
-          </template>
-        </el-table-column>
-        <el-table-column align="left" label="启用" min-width="150">
-          <template #default="scope">
-            <el-switch
-              v-model="scope.row.enable"
-              inline-prompt
-              :active-value="1"
-              :inactive-value="2"
-              @change="
-                () => {
-                  switchEnable(scope.row)
-                }
-              "
-            />
-          </template>
-        </el-table-column>
+    <GvaGrid ref="gridRef" v-bind="gridOptions" v-on="gridEvents">
+      <template #toolbar-buttons>
+        <el-button type="primary" icon="plus" @click="addUser">新增用户</el-button>
+      </template>
 
-        <el-table-column label="操作" :min-width="appStore.operateMinWith" fixed="right">
-          <template #default="scope">
-            <el-button
-              type="primary"
-              link
-              icon="delete"
-              @click="deleteUserFunc(scope.row)"
-              >删除</el-button
-            >
-            <el-button
-              type="primary"
-              link
-              icon="edit"
-              @click="openEdit(scope.row)"
-              >编辑</el-button
-            >
-            <el-button
-              type="primary"
-              link
-              icon="magic-stick"
-              @click="resetPasswordFunc(scope.row)"
-              >重置密码</el-button
-            >
-          </template>
-        </el-table-column>
-      </el-table>
-      <div class="gva-pagination">
-        <el-pagination
-          :current-page="page"
-          :page-size="pageSize"
-          :page-sizes="[10, 30, 50, 100]"
-          :total="total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @current-change="handleCurrentChange"
-          @size-change="handleSizeChange"
+      <template #headerImg="{ row }">
+        <CustomPic style="margin-top: 8px" :pic-src="row.headerImg" />
+      </template>
+
+      <template #authorities="{ row }">
+        <el-cascader
+          v-model="row.authorityIds"
+          :options="authOptions"
+          :show-all-levels="false"
+          collapse-tags
+          :props="{
+            multiple: true,
+            checkStrictly: true,
+            label: 'authorityName',
+            value: 'authorityId',
+            disabled: 'disabled',
+            emitPath: false
+          }"
+          :clearable="false"
+          @visible-change="
+            (flag) => {
+              changeAuthority(row, flag, 0)
+            }
+          "
+          @remove-tag="
+            (removeAuth) => {
+              changeAuthority(row, false, removeAuth)
+            }
+          "
         />
-      </div>
-    </div>
+      </template>
+
+      <template #enable="{ row }">
+        <el-switch
+          v-model="row.enable"
+          inline-prompt
+          :active-value="1"
+          :inactive-value="2"
+          @change="
+            () => {
+              switchEnable(row)
+            }
+          "
+        />
+      </template>
+
+      <template #operate="{ row }">
+        <el-button type="primary" link icon="delete" @click="deleteRow(row)">删除</el-button>
+        <el-button type="primary" link icon="edit" @click="openEdit(row)">编辑</el-button>
+        <el-button type="primary" link icon="magic-stick" @click="resetPasswordFunc(row)">
+          重置密码
+        </el-button>
+      </template>
+    </GvaGrid>
+
     <!-- 重置密码对话框 -->
     <el-dialog
       v-model="resetPwdDialog"
@@ -175,34 +93,19 @@
       </template>
     </el-dialog>
 
-    <el-drawer
-      v-model="addUserDialog"
-      :size="appStore.drawerSize"
-      :show-close="false"
-    >
+    <el-drawer v-model="addUserDialog" :size="appStore.drawerSize" :show-close="false">
       <template #header>
         <div class="flex justify-between items-center">
           <span class="text-lg">用户</span>
           <div>
             <el-button @click="closeAddUserDialog">取 消</el-button>
-            <el-button type="primary" @click="enterAddUserDialog"
-              >确 定</el-button
-            >
+            <el-button type="primary" @click="enterAddUserDialog">确 定</el-button>
           </div>
         </div>
       </template>
 
-      <el-form
-        ref="userForm"
-        :rules="rules"
-        :model="userInfo"
-        label-width="80px"
-      >
-        <el-form-item
-          v-if="dialogFlag === 'add'"
-          label="用户名"
-          prop="userName"
-        >
+      <el-form ref="userForm" :rules="rules" :model="userInfo" label-width="80px">
+        <el-form-item v-if="dialogFlag === 'add'" label="用户名" prop="userName">
           <el-input v-model="userInfo.userName" />
         </el-form-item>
         <el-form-item v-if="dialogFlag === 'add'" label="密码" prop="password">
@@ -235,12 +138,7 @@
           />
         </el-form-item>
         <el-form-item label="启用" prop="disabled">
-          <el-switch
-            v-model="userInfo.enable"
-            inline-prompt
-            :active-value="1"
-            :inactive-value="2"
-          />
+          <el-switch v-model="userInfo.enable" inline-prompt :active-value="1" :inactive-value="2" />
         </el-form-item>
         <el-form-item label="头像" label-width="80px">
           <SelectImage v-model="userInfo.headerImg" />
@@ -255,19 +153,19 @@
     getUserList,
     setUserAuthorities,
     register,
-    deleteUser
+    deleteUser,
+    setUserInfo,
+    resetPassword
   } from '@/api/user'
 
   import { getAuthorityList } from '@/api/authority'
+  import GvaGrid, { useGvaGrid, useGvaGridDelete } from '@/components/gvaGrid'
   import CustomPic from '@/components/customPic/index.vue'
   import WarningBar from '@/components/warningBar/warningBar.vue'
-  import { setUserInfo, resetPassword } from '@/api/user.js'
-
-  import { nextTick, ref, watch } from 'vue'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { nextTick, ref } from 'vue'
+  import { ElMessage } from 'element-plus'
   import SelectImage from '@/components/selectImage/selectImage.vue'
-  import { useAppStore } from "@/pinia";
-  import { toSQLLine } from '@/utils/stringFun'
+  import { useAppStore } from '@/pinia'
 
   defineOptions({
     name: 'User'
@@ -275,30 +173,43 @@
 
   const appStore = useAppStore()
 
-  const searchInfo = ref({
-    username: '',
-    nickname: '',
-    phone: '',
-    email: ''
+  const { gridRef, gridOptions, gridEvents, refresh } = useGvaGrid({
+    id: 'superAdmin-user',
+    api: getUserList,
+    defaultSort: { field: 'ID', order: 'desc' },
+    searchItems: [
+      { field: 'username', title: '用户名', span: 6, itemRender: { name: 'VxeInput', props: { placeholder: '用户名', clearable: true } } },
+      { field: 'nickname', title: '昵称', span: 6, itemRender: { name: 'VxeInput', props: { placeholder: '昵称', clearable: true } } },
+      { field: 'phone', title: '手机号', span: 6, itemRender: { name: 'VxeInput', props: { placeholder: '手机号', clearable: true } } },
+      { field: 'email', title: '邮箱', span: 6, itemRender: { name: 'VxeInput', props: { placeholder: '邮箱', clearable: true } } }
+    ],
+    columns: [
+      { field: 'headerImg', title: '头像', width: 80, slots: { default: 'headerImg' } },
+      { field: 'ID', title: 'ID', width: 80, sortable: true },
+      { field: 'userName', title: '用户名', minWidth: 150 },
+      { field: 'nickName', title: '昵称', minWidth: 150 },
+      { field: 'phone', title: '手机号', minWidth: 180 },
+      { field: 'email', title: '邮箱', minWidth: 180 },
+      { field: 'authorities', title: '用户角色', minWidth: 200, slots: { default: 'authorities' } },
+      { field: 'enable', title: '启用', minWidth: 100, slots: { default: 'enable' } },
+      { title: '操作', fixed: 'right', slots: { default: 'operate' } }
+    ],
+    // 数据后处理：行内角色级联需要 authorityIds 数组（原 watch(tableData) 逻辑）
+    afterQuery: (res) => {
+      const list = (res.data && res.data.list) || []
+      list.forEach((user) => {
+        user.authorityIds =
+          user.authorities && user.authorities.map((i) => i.authorityId)
+      })
+    }
   })
 
-  const onSubmit = () => {
-    page.value = 1
-    getTableData()
-  }
+  const { deleteRow } = useGvaGridDelete(gridRef, {
+    delete: (rows) => deleteUser({ id: rows[0].ID }),
+    confirmText: '确定要删除吗?'
+  })
 
-  const onReset = () => {
-    searchInfo.value = {
-      username: '',
-      nickname: '',
-      phone: '',
-      email: ''
-    }
-    orderKey.value = 'id'
-    desc.value = true
-    getTableData()
-  }
-  // 初始化相关
+  // 角色选项（初始化相关）
   const setAuthorityOptions = (AuthorityData, optionsData) => {
     AuthorityData &&
       AuthorityData.forEach((item) => {
@@ -320,55 +231,6 @@
       })
   }
 
-  const page = ref(1)
-  const total = ref(0)
-  const pageSize = ref(10)
-  const tableData = ref([])
-  const orderKey = ref('id')
-  const desc = ref(true)
-
-  const sortChange = ({ prop, order }) => {
-    if (prop) {
-      orderKey.value = prop === 'ID' ? 'id' : toSQLLine(prop)
-      desc.value = order === 'descending'
-    }
-    getTableData()
-  }
-  // 分页
-  const handleSizeChange = (val) => {
-    pageSize.value = val
-    getTableData()
-  }
-
-  const handleCurrentChange = (val) => {
-    page.value = val
-    getTableData()
-  }
-
-  // 查询
-  const getTableData = async () => {
-    const table = await getUserList({
-      page: page.value,
-      pageSize: pageSize.value,
-      orderKey: orderKey.value,
-      desc: desc.value,
-      ...searchInfo.value
-    })
-    if (table.code === 0) {
-      tableData.value = table.data.list
-      total.value = table.data.total
-      page.value = table.data.page
-      pageSize.value = table.data.pageSize
-    }
-  }
-
-  watch(
-    () => tableData.value,
-    () => {
-      setAuthorityIds()
-    }
-  )
-
   const authOptions = ref([])
   const setOptions = (authData) => {
     authOptions.value = []
@@ -376,7 +238,6 @@
   }
 
   const initPage = async () => {
-    getTableData()
     const res = await getAuthorityList()
     setOptions(res.data)
   }
@@ -458,30 +319,6 @@
     resetPwdInfo.value.password = ''
     resetPwdDialog.value = false
   }
-  const setAuthorityIds = () => {
-    tableData.value &&
-      tableData.value.forEach((user) => {
-        user.authorityIds =
-          user.authorities &&
-          user.authorities.map((i) => {
-            return i.authorityId
-          })
-      })
-  }
-
-  const deleteUserFunc = async (row) => {
-    ElMessageBox.confirm('确定要删除吗?', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }).then(async () => {
-      const res = await deleteUser({ id: row.ID })
-      if (res.code === 0) {
-        ElMessage.success('删除成功')
-        await getTableData()
-      }
-    })
-  }
 
   // 弹窗相关
   const userInfo = ref({
@@ -518,9 +355,7 @@
         trigger: 'blur'
       }
     ],
-    authorityId: [
-      { required: true, message: '请选择用户角色', trigger: 'blur' }
-    ]
+    authorityId: [{ required: true, message: '请选择用户角色', trigger: 'blur' }]
   })
   const userForm = ref(null)
   const enterAddUserDialog = async () => {
@@ -534,7 +369,7 @@
           const res = await register(req)
           if (res.code === 0) {
             ElMessage({ type: 'success', message: '创建成功' })
-            await getTableData()
+            await refresh()
             closeAddUserDialog()
           }
         }
@@ -542,7 +377,7 @@
           const res = await setUserInfo(req)
           if (res.code === 0) {
             ElMessage({ type: 'success', message: '编辑成功' })
-            await getTableData()
+            await refresh()
             closeAddUserDialog()
           }
         }
@@ -608,7 +443,7 @@
         type: 'success',
         message: `${req.enable === 2 ? '禁用' : '启用'}成功`
       })
-      await getTableData()
+      await refresh()
       userInfo.value.headerImg = ''
       userInfo.value.authorityIds = []
     }

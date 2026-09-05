@@ -3,79 +3,22 @@
     <warning-bar
       title="在资源权限中将此角色的资源权限清空 或者不包含创建者的角色 即可屏蔽此客户资源的显示"
     />
-    <div class="gva-table-box">
-      <div class="gva-btn-list">
-        <el-button type="primary" icon="plus" @click="openDrawer"
-          >新增</el-button
-        >
-      </div>
-      <el-table
-        ref="multipleTable"
-        :data="tableData"
-        style="width: 100%"
-        tooltip-effect="dark"
-        row-key="ID"
-      >
-        <el-table-column type="selection" width="55" />
-        <el-table-column align="left" label="接入日期" width="180">
-          <template #default="scope">
-            <span>{{ formatDate(scope.row.CreatedAt) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column
-          align="left"
-          label="姓名"
-          prop="customerName"
-          width="120"
-        />
-        <el-table-column
-          align="left"
-          label="电话"
-          prop="customerPhoneData"
-          width="120"
-        />
-        <el-table-column
-          align="left"
-          label="接入人ID"
-          prop="sysUserId"
-          width="120"
-        />
-        <el-table-column align="left" label="操作" min-width="160">
-          <template #default="scope">
-            <el-button
-              type="primary"
-              link
-              icon="edit"
-              @click="updateCustomer(scope.row)"
-              >变更</el-button
-            >
-            <el-button
-              type="primary"
-              link
-              icon="delete"
-              @click="deleteCustomer(scope.row)"
-              >删除</el-button
-            >
-          </template>
-        </el-table-column>
-      </el-table>
-      <div class="gva-pagination">
-        <el-pagination
-          :current-page="page"
-          :page-size="pageSize"
-          :page-sizes="[10, 30, 50, 100]"
-          :total="total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @current-change="handleCurrentChange"
-          @size-change="handleSizeChange"
-        />
-      </div>
-    </div>
-    <el-drawer
-      v-model="drawerFormVisible"
-      :before-close="closeDrawer"
-      :show-close="false"
-    >
+    <GvaGrid ref="gridRef" v-bind="gridOptions" v-on="gridEvents">
+      <template #toolbar-buttons>
+        <el-button type="primary" icon="plus" @click="openDrawer">新增</el-button>
+      </template>
+
+      <template #createdAt="{ row }">
+        <span>{{ formatDate(row.CreatedAt) }}</span>
+      </template>
+
+      <template #operate="{ row }">
+        <el-button type="primary" link icon="edit" @click="updateCustomer(row)">变更</el-button>
+        <el-button type="primary" link icon="delete" @click="deleteCustomerRow(row)">删除</el-button>
+      </template>
+    </GvaGrid>
+
+    <el-drawer v-model="drawerFormVisible" :before-close="closeDrawer" :show-close="false">
       <template #header>
         <div class="flex justify-between items-center">
           <span class="text-lg">客户</span>
@@ -107,8 +50,8 @@
   } from '@/api/customer'
   import WarningBar from '@/components/warningBar/warningBar.vue'
   import { ref } from 'vue'
-  import { ElMessage, ElMessageBox } from 'element-plus'
   import { formatDate } from '@/utils/format'
+  import GvaGrid, { useGvaGrid, useGvaGridDelete } from '@/components/gvaGrid'
 
   defineOptions({
     name: 'Customer'
@@ -119,37 +62,25 @@
     customerPhoneData: ''
   })
 
-  const page = ref(1)
-  const total = ref(0)
-  const pageSize = ref(10)
-  const tableData = ref([])
+  const { gridRef, gridOptions, gridEvents, refresh } = useGvaGrid({
+    id: 'example-customer',
+    api: getExaCustomerList,
+    defaultSort: null,
+    checkbox: true,
+    columns: [
+      { field: 'CreatedAt', title: '接入日期', width: 180, cellRender: { name: 'gvaDate' } },
+      { field: 'customerName', title: '姓名', width: 120 },
+      { field: 'customerPhoneData', title: '电话', width: 120 },
+      { field: 'sysUserId', title: '接入人ID', width: 120 },
+      { title: '操作', fixed: 'right', slots: { default: 'operate' } }
+    ]
+  })
 
-  // 分页
-  const handleSizeChange = (val) => {
-    pageSize.value = val
-    getTableData()
-  }
-
-  const handleCurrentChange = (val) => {
-    page.value = val
-    getTableData()
-  }
-
-  // 查询
-  const getTableData = async () => {
-    const table = await getExaCustomerList({
-      page: page.value,
-      pageSize: pageSize.value
-    })
-    if (table.code === 0) {
-      tableData.value = table.data.list
-      total.value = table.data.total
-      page.value = table.data.page
-      pageSize.value = table.data.pageSize
-    }
-  }
-
-  getTableData()
+  const { deleteRow: deleteCustomerRow } = useGvaGridDelete(gridRef, {
+    delete: (rows) => deleteExaCustomer({ ID: rows[0].ID }),
+    confirmText: '确定要删除吗?',
+    successText: '删除成功'
+  })
 
   const drawerFormVisible = ref(false)
   const type = ref('')
@@ -168,25 +99,6 @@
       customerPhoneData: ''
     }
   }
-  const deleteCustomer = async (row) => {
-    ElMessageBox.confirm('确定要删除吗?', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }).then(async () => {
-      const res = await deleteExaCustomer({ ID: row.ID })
-      if (res.code === 0) {
-        ElMessage({
-          type: 'success',
-          message: '删除成功'
-        })
-        if (tableData.value.length === 1 && page.value > 1) {
-          page.value--
-        }
-        getTableData()
-      }
-    })
-  }
   const enterDrawer = async () => {
     let res
     switch (type.value) {
@@ -203,7 +115,7 @@
 
     if (res.code === 0) {
       closeDrawer()
-      getTableData()
+      refresh()
     }
   }
   const openDrawer = () => {

@@ -1,137 +1,57 @@
 <template>
   <div>
-    <div class="gva-search-box">
-      <el-form :inline="true" :model="searchInfo">
-        <el-form-item label="请求方法">
-          <el-input v-model="searchInfo.method" placeholder="搜索条件" />
-        </el-form-item>
-        <el-form-item label="请求路径">
-          <el-input v-model="searchInfo.path" placeholder="搜索条件" />
-        </el-form-item>
-        <el-form-item label="结果状态码">
-          <el-input v-model="searchInfo.status" placeholder="搜索条件" />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" icon="search" @click="onSubmit"
-            >查询</el-button
-          >
-          <el-button icon="refresh" @click="onReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </div>
-    <div class="gva-table-box">
-      <div class="gva-btn-list">
-        <el-button
-          icon="delete"
-          :disabled="!multipleSelection.length"
-          @click="onDelete"
-          >删除</el-button
-        >
-      </div>
-      <el-table
-        ref="multipleTable"
-        :data="tableData"
-        style="width: 100%"
-        tooltip-effect="dark"
-        row-key="ID"
-        @selection-change="handleSelectionChange"
-      >
-        <el-table-column align="left" type="selection" width="55" />
-        <el-table-column align="left" label="操作人" width="140">
-          <template #default="scope">
-            <div>
-              {{ scope.row.user.userName }}({{ scope.row.user.nickName }})
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column align="left" label="日期" width="180">
-          <template #default="scope">{{
-            formatDate(scope.row.CreatedAt)
-          }}</template>
-        </el-table-column>
-        <el-table-column align="left" label="状态码" prop="status" width="120">
-          <template #default="scope">
-            <div>
-              <el-tag type="success">{{ scope.row.status }}</el-tag>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column align="left" label="请求IP" prop="ip" width="120" />
-        <el-table-column
-          align="left"
-          label="请求方法"
-          prop="method"
-          width="120"
-        />
-        <el-table-column
-          align="left"
-          label="请求路径"
-          prop="path"
-          width="240"
-        />
-        <el-table-column align="left" label="请求" prop="path" width="80">
-          <template #default="scope">
-            <div>
-              <el-popover
-                v-if="scope.row.body"
-                placement="left-start"
-                :width="444"
-              >
-                <div class="popover-box">
-                  <pre>{{ fmtBody(scope.row.body) }}</pre>
-                </div>
-                <template #reference>
-                  <el-icon style="cursor: pointer"><warning /></el-icon>
-                </template>
-              </el-popover>
+    <GvaGrid ref="gridRef" v-bind="gridOptions" v-on="gridEvents">
+      <template #toolbar-buttons>
+        <el-button icon="delete" :disabled="!selectedRows.length" @click="onBatchDelete(selectedRows)">
+          删除
+        </el-button>
+      </template>
 
-              <span v-else>无</span>
+      <template #user="{ row }">
+        <div>
+          {{ row.user.userName }}({{ row.user.nickName }})
+        </div>
+      </template>
+
+      <template #status="{ row }">
+        <div>
+          <el-tag type="success">{{ row.status }}</el-tag>
+        </div>
+      </template>
+
+      <template #body="{ row }">
+        <div>
+          <el-popover v-if="row.body" placement="left-start" :width="444">
+            <div class="popover-box">
+              <pre>{{ fmtBody(row.body) }}</pre>
             </div>
-          </template>
-        </el-table-column>
-        <el-table-column align="left" label="响应" prop="path" width="80">
-          <template #default="scope">
-            <div>
-              <el-popover
-                v-if="scope.row.resp"
-                placement="left-start"
-                :width="444"
-              >
-                <div class="popover-box">
-                  <pre>{{ fmtBody(scope.row.resp) }}</pre>
-                </div>
-                <template #reference>
-                  <el-icon style="cursor: pointer"><warning /></el-icon>
-                </template>
-              </el-popover>
-              <span v-else>无</span>
+            <template #reference>
+              <el-icon style="cursor: pointer"><warning /></el-icon>
+            </template>
+          </el-popover>
+
+          <span v-else>无</span>
+        </div>
+      </template>
+
+      <template #resp="{ row }">
+        <div>
+          <el-popover v-if="row.resp" placement="left-start" :width="444">
+            <div class="popover-box">
+              <pre>{{ fmtBody(row.resp) }}</pre>
             </div>
-          </template>
-        </el-table-column>
-        <el-table-column align="left" label="操作">
-          <template #default="scope">
-            <el-button
-              icon="delete"
-              type="primary"
-              link
-              @click="deleteSysOperationRecordFunc(scope.row)"
-              >删除</el-button
-            >
-          </template>
-        </el-table-column>
-      </el-table>
-      <div class="gva-pagination">
-        <el-pagination
-          :current-page="page"
-          :page-size="pageSize"
-          :page-sizes="[10, 30, 50, 100]"
-          :total="total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @current-change="handleCurrentChange"
-          @size-change="handleSizeChange"
-        />
-      </div>
-    </div>
+            <template #reference>
+              <el-icon style="cursor: pointer"><warning /></el-icon>
+            </template>
+          </el-popover>
+          <span v-else>无</span>
+        </div>
+      </template>
+
+      <template #operate="{ row }">
+        <el-button icon="delete" type="primary" link @click="deleteRow(row)">删除</el-button>
+      </template>
+    </GvaGrid>
   </div>
 </template>
 
@@ -141,106 +61,44 @@
     getSysOperationRecordList,
     deleteSysOperationRecordByIds
   } from '@/api/sysOperationRecord' // 此处请自行替换地址
-  import { formatDate } from '@/utils/format'
-  import { ref } from 'vue'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import GvaGrid, { useGvaGrid, useGvaGridDelete } from '@/components/gvaGrid'
 
   defineOptions({
     name: 'SysOperationRecord'
   })
 
-  const page = ref(1)
-  const total = ref(0)
-  const pageSize = ref(10)
-  const tableData = ref([])
-  const searchInfo = ref({})
-  const onReset = () => {
-    searchInfo.value = {}
-  }
-  // 条件搜索前端看此方法
-  const onSubmit = () => {
-    page.value = 1
-    if (searchInfo.value.status === '') {
-      searchInfo.value.status = null
-    }
-    getTableData()
-  }
+  const { gridRef, gridOptions, gridEvents, selectedRows } = useGvaGrid({
+    id: 'superAdmin-sysOperationRecord',
+    api: getSysOperationRecordList,
+    defaultSort: null,
+    checkbox: true,
+    searchItems: [
+      { field: 'method', title: '请求方法', span: 6, itemRender: { name: 'VxeInput', props: { placeholder: '搜索条件', clearable: true } } },
+      { field: 'path', title: '请求路径', span: 6, itemRender: { name: 'VxeInput', props: { placeholder: '搜索条件', clearable: true } } },
+      { field: 'status', title: '结果状态码', span: 6, itemRender: { name: 'VxeInput', props: { placeholder: '搜索条件', clearable: true } } }
+    ],
+    columns: [
+      { field: 'user', title: '操作人', width: 140, slots: { default: 'user' } },
+      { field: 'CreatedAt', title: '日期', width: 180, cellRender: { name: 'gvaDate' } },
+      { field: 'status', title: '状态码', width: 120, slots: { default: 'status' } },
+      { field: 'ip', title: '请求IP', width: 120 },
+      { field: 'method', title: '请求方法', width: 120 },
+      { field: 'path', title: '请求路径', width: 240 },
+      { field: 'body', title: '请求', width: 80, slots: { default: 'body' } },
+      { field: 'resp', title: '响应', width: 80, slots: { default: 'resp' } },
+      { title: '操作', minWidth: 100, slots: { default: 'operate' } }
+    ]
+  })
 
-  // 分页
-  const handleSizeChange = (val) => {
-    pageSize.value = val
-    getTableData()
-  }
+  const { deleteRow, deleteRows: onBatchDelete } = useGvaGridDelete(gridRef, {
+    delete: (rows) => {
+      if (rows.length === 1) return deleteSysOperationRecord({ ID: rows[0].ID })
+      return deleteSysOperationRecordByIds({ ids: rows.map((item) => item.ID) })
+    },
+    confirmText: '确定要删除吗?',
+    successText: '删除成功'
+  })
 
-  const handleCurrentChange = (val) => {
-    page.value = val
-    getTableData()
-  }
-
-  // 查询
-  const getTableData = async () => {
-    const table = await getSysOperationRecordList({
-      page: page.value,
-      pageSize: pageSize.value,
-      ...searchInfo.value
-    })
-    if (table.code === 0) {
-      tableData.value = table.data.list
-      total.value = table.data.total
-      page.value = table.data.page
-      pageSize.value = table.data.pageSize
-    }
-  }
-
-  getTableData()
-
-  const multipleSelection = ref([])
-  const handleSelectionChange = (val) => {
-    multipleSelection.value = val
-  }
-  const onDelete = async () => {
-    ElMessageBox.confirm('确定要删除吗?', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }).then(async () => {
-      const ids = []
-      multipleSelection.value &&
-        multipleSelection.value.forEach((item) => {
-          ids.push(item.ID)
-        })
-      const res = await deleteSysOperationRecordByIds({ ids })
-      if (res.code === 0) {
-        ElMessage({
-          type: 'success',
-          message: '删除成功'
-        })
-        if (tableData.value.length === ids.length && page.value > 1) {
-          page.value--
-        }
-        getTableData()
-      }
-    })
-  }
-  const deleteSysOperationRecordFunc = async (row) => {
-    ElMessageBox.confirm('确定要删除吗?', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }).then(async () => {
-      const res = await deleteSysOperationRecord({ ID: row.ID })
-      if (res.code === 0) {
-        ElMessage({
-          type: 'success',
-          message: '删除成功'
-        })
-        if (tableData.value.length === 1 && page.value > 1) {
-          page.value--
-        }
-        getTableData()
-      }
-    })
-  }
   const fmtBody = (value) => {
     try {
       return JSON.parse(value)
