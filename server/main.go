@@ -59,5 +59,6 @@ func initializeSystem() {
 		initialize.MigrateDatabase()    // 版本化数据库迁移（先于 AutoMigrate，保证变更按版本落地）
 		initialize.RegisterTables()     // AutoMigrate 兜底（纯新增表/列，幂等）
 		initialize.SeedDataPermission() // 数据权限体系幂等种子（菜单/API/casbin/演示组织）
+		initialize.SeedOntology()       // 本体治理幂等种子（菜单/API/casbin）
 	}
 }
