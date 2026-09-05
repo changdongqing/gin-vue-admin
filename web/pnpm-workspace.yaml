@@ -1,0 +1,4 @@
+# pnpm 11 起, 依赖构建脚本默认被拦截且未放行会直接报错(ERR_PNPM_IGNORED_BUILDS)
+# 镜像构建时放行全部依赖构建脚本(等效于 npm 的默认行为), 免去逐个白名单:
+# 涉及 @vue-office/*, vue-demi, core-js-pure, es5-ext, @parcel/watcher, yorkie 等
+dangerouslyAllowAllBuilds: true

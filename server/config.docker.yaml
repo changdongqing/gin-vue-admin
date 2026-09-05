@@ -23,8 +23,9 @@ redis:
     #是否使用redis集群模式
     useCluster: false
     #使用集群模式addr和db默认无效
-    addr: 177.7.0.14:6379
-    password: ""
+    # host.docker.internal 由 docker-compose 的 extra_hosts(host-gateway) 解析到宿主机
+    addr: host.docker.internal:6379
+    password: "chdq5201"
     db: 0
     clusterAddrs:
         - "177.7.0.14:7000"
@@ -35,8 +36,8 @@ redis:
 redis-list:
     - name: cache           # 数据库的名称,注意: name 需要在 redis-list 中唯一
       useCluster: false     # 是否使用redis集群模式
-      addr: 177.7.0.14:6379  # 使用集群模式addr和db默认无效
-      password: ""
+      addr: host.docker.internal:6379  # 使用集群模式addr和db默认无效
+      password: "chdq5201"
       db: 0
       clusterAddrs:
           - "177.7.0.14:7000"
@@ -74,9 +75,9 @@ email:
 system:
     env: local # 修改为public可以关闭路由日志输出
     addr: 8888
-    db-type: mysql
+    db-type: pgsql # 复用宿主机已有的 PostgreSQL
     oss-type: local # 控制oss选择走本地还是 七牛等其他仓 自行增加其他oss仓可以在 server/utils/upload/upload.go 中 NewOss函数配置
-    use-redis: false # 使用redis
+    use-redis: true # 使用redis(复用宿主机已有的Redis)
     use-mongo: false     # 使用mongo
     use-multipoint: false
     # IP限制次数 一个小时15000次
@@ -111,6 +112,9 @@ mysql:
     log-zap: false
 
 # pgsql connect configuration
+# docker 部署复用宿主机已有的 PostgreSQL: 首次启动后打开 http://localhost:8080
+# 按初始化向导填写 host.docker.internal / 5432 / postgres / 密码 / gin_vue_admin,
+# 提交后会自动建库建表, 并把连接信息写回 deploy/docker-compose/config.docker.yaml(挂载进容器的运行配置)
 # 未初始化之前请勿手动修改数据库信息！！！如果一定要手动初始化请看（https://gin-vue-admin.com/docs/first_master）
 pgsql:
     path: ""
