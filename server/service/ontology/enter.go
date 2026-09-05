@@ -5,4 +5,6 @@ type ServiceGroup struct {
 	PropertyTemplateService
 	ClassTemplateService
 	ClassificationRuleService
+	QuantityKindService
+	UnitService
 }

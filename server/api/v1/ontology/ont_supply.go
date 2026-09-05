@@ -73,3 +73,36 @@ func (api *SupplyApi) SuggestClassHierarchy(c *gin.Context) {
 	}
 	response.OkWithData(suggest, c)
 }
+
+// GetUnitsForSupply 供给：单位列表（FR-5）
+// @Tags      本体供给
+// @Summary   供给单位清单（仅启用，含换算系数/偏移/基准单位/QUDT 版本快照）
+// @Security  ApiKeyAuth
+// @Produce   application/json
+// @Param     quantityKindCode query string false "量纲标识"
+// @Success   200 {object} response.Response{data=[]ontology.OntUnit,msg=string}
+// @Router    /ontology/supply/v1/units [get]
+func (api *SupplyApi) GetUnitsForSupply(c *gin.Context) {
+	list, err := UnitService.GetUnitsForSupply(c.Query("quantityKindCode"))
+	if err != nil {
+		global.GVA_LOG.Error("供给查询失败!", zap.Error(err))
+		response.FailWithMessage("供给查询失败:"+err.Error(), c)
+		return
+	}
+	response.OkWithData(list, c)
+}
+
+// ConvertUnitForSupply 供给：单位换算（同治理侧 convertUnit 口径）
+// @Tags      本体供给
+// @Summary   供给单位换算（跨量纲/单位不存在返回 result=null + reason）
+// @Security  ApiKeyAuth
+// @Produce   application/json
+// @Param     value query string true "数值"
+// @Param     fromIri query string true "源单位 QUDT IRI"
+// @Param     toIri query string true "目标单位 QUDT IRI"
+// @Success   200 {object} response.Response{data=ontology.ConvertUnitResp,msg=string}
+// @Router    /ontology/supply/v1/units/convert [get]
+func (api *SupplyApi) ConvertUnitForSupply(c *gin.Context) {
+	unitApi := UnitApi{}
+	unitApi.ConvertUnit(c)
+}

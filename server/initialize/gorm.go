@@ -75,6 +75,8 @@ func RegisterTables() {
 		ontology.OntClassTemplateRef{},
 		ontology.OntClassificationRule{},
 		ontology.OntClassHierarchy{},
+		ontology.OntQuantityKind{},
+		ontology.OntUnit{},
 
 		example.ExaFile{},
 		example.ExaCustomer{},

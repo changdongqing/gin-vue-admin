@@ -8,6 +8,8 @@ type ApiGroup struct {
 	PropertyTemplateApi
 	ClassTemplateApi
 	ClassificationRuleApi
+	UnitApi
+	QuantityKindApi
 	SupplyApi
 }
 
@@ -15,4 +17,6 @@ var (
 	PropertyTemplateService   = service.ServiceGroupApp.OntologyServiceGroup.PropertyTemplateService
 	ClassTemplateService      = service.ServiceGroupApp.OntologyServiceGroup.ClassTemplateService
 	ClassificationRuleService = service.ServiceGroupApp.OntologyServiceGroup.ClassificationRuleService
+	UnitService               = service.ServiceGroupApp.OntologyServiceGroup.UnitService
+	QuantityKindService       = service.ServiceGroupApp.OntologyServiceGroup.QuantityKindService
 )

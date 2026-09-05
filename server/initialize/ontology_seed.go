@@ -53,6 +53,7 @@ func seedOntologyMenus() {
 	seeds := []menuSeed{
 		{Name: "propertyTemplate", Title: "属性模板库", Icon: "document", Component: "view/ontology/propertyTemplate/propertyTemplate.vue", Sort: 1},
 		{Name: "classTemplate", Title: "分类模板", Icon: "grid", Component: "view/ontology/classTemplate/classTemplate.vue", Sort: 2},
+		{Name: "unit", Title: "单位注册表", Icon: "scale-to-original", Component: "view/ontology/unit/unit.vue", Sort: 3},
 	}
 	for _, s := range seeds {
 		var count int64
@@ -128,9 +129,20 @@ func seedOntologyApis() {
 		{"/ontology/classTemplate/previewClassificationCode", "GET", "本体治理", "分类编码预览"},
 		{"/ontology/classificationRule/findClassificationRule", "GET", "本体治理", "查询分类编码规则"},
 		{"/ontology/classificationRule/saveClassificationRule", "PUT", "本体治理", "保存分类编码规则"},
+		{"/ontology/unit/createUnit", "POST", "本体治理", "创建单位"},
+		{"/ontology/unit/updateUnit", "PUT", "本体治理", "更新单位"},
+		{"/ontology/unit/deleteUnit", "DELETE", "本体治理", "删除单位"},
+		{"/ontology/unit/disableUnit", "PUT", "本体治理", "停用/启用单位"},
+		{"/ontology/unit/findUnit", "GET", "本体治理", "查询单位详情"},
+		{"/ontology/unit/getUnitPage", "GET", "本体治理", "分页查询单位"},
+		{"/ontology/unit/getUnitAll", "GET", "本体治理", "全量单位下拉"},
+		{"/ontology/unit/convertUnit", "GET", "本体治理", "单位换算试算"},
+		{"/ontology/quantityKind/getQuantityKindList", "GET", "本体治理", "量纲列表"},
 		{"/ontology/supply/v1/propertyTemplates", "GET", "本体供给", "供给属性模板列表"},
 		{"/ontology/supply/v1/classTemplate/tree", "GET", "本体供给", "供给分类模板树"},
 		{"/ontology/supply/v1/classHierarchy/suggest", "GET", "本体供给", "类层级建议"},
+		{"/ontology/supply/v1/units", "GET", "本体供给", "供给单位清单"},
+		{"/ontology/supply/v1/units/convert", "GET", "本体供给", "供给单位换算"},
 	}
 	// 治理 CRUD 授 888；供给接口额外授予「建模师」角色（若存在）
 	governanceRoles := []string{"888"}
