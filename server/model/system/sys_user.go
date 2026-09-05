@@ -30,6 +30,8 @@ type SysUser struct {
 	Phone         string         `json:"phone"  gorm:"comment:用户手机号"`                                                                        // 用户手机号
 	Email         string         `json:"email"  gorm:"comment:用户邮箱"`                                                                         // 用户邮箱
 	Enable        int            `json:"enable" gorm:"default:1;comment:用户是否被冻结 1正常 2冻结"`                                                    //用户是否被冻结 1正常 2冻结
+	DepartmentId  uint           `json:"departmentId" gorm:"index;default:0;comment:主属部门ID 0为未分配"`                                               //主属部门ID
+	Department    SysDepartment  `json:"department" gorm:"foreignKey:DepartmentId;references:ID;comment:主属部门"`                                       //主属部门
 	OriginSetting common.JSONMap `json:"originSetting" form:"originSetting" gorm:"type:text;default:null;column:origin_setting;comment:配置;"` //配置
 }
 

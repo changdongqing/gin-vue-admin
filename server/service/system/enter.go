@@ -27,4 +27,8 @@ type ServiceGroup struct {
 	SysErrorService
 	LoginLogService
 	ApiTokenService
+	CompanyService
+	DepartmentService
+	AuthorityDataScopeService
+	DataScopeService
 }

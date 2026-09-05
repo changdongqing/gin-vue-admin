@@ -80,6 +80,10 @@ func (authorityService *AuthorityService) CopyAuthority(adminAuthorityID uint, c
 	if err != nil {
 		return
 	}
+	// 同步复制数据范围配置与自定义明细
+	if err = AuthorityDataScopeServiceApp.CopyAuthorityDataScope(global.GVA_DB, copyInfo.OldAuthorityId, copyInfo.Authority.AuthorityId); err != nil {
+		return
+	}
 
 	var btns []system.SysAuthorityBtn
 
@@ -164,6 +168,9 @@ func (authorityService *AuthorityService) DeleteAuthority(auth *system.SysAuthor
 			return err
 		}
 		if err = tx.Where("authority_id = ?", auth.AuthorityId).Delete(&[]system.SysAuthorityBtn{}).Error; err != nil {
+			return err
+		}
+		if err = AuthorityDataScopeServiceApp.DeleteByAuthorityId(tx, auth.AuthorityId); err != nil {
 			return err
 		}
 

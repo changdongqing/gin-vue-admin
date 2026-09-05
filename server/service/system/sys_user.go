@@ -30,6 +30,14 @@ func (userService *UserService) Register(u system.SysUser) (userInter system.Sys
 	if !errors.Is(global.GVA_DB.Where("username = ?", u.Username).First(&user).Error, gorm.ErrRecordNotFound) { // 判断用户名是否注册
 		return userInter, errors.New("用户名已注册")
 	}
+	// 主属部门校验（0 表示未分配）
+	if u.DepartmentId != 0 {
+		var count int64
+		global.GVA_DB.Model(&system.SysDepartment{}).Where("id = ?", u.DepartmentId).Count(&count)
+		if count == 0 {
+			return userInter, errors.New("所选部门不存在")
+		}
+	}
 	// 否则 附加uuid 密码hash加密 注册
 	u.Password = utils.BcryptHash(u.Password)
 	u.UUID = uuid.New()
@@ -86,7 +94,7 @@ func (userService *UserService) ChangePassword(u *system.SysUser, newPassword st
 //@param: info request.PageInfo
 //@return: err error, list interface{}, total int64
 
-func (userService *UserService) GetUserInfoList(info systemReq.GetUserList) (list interface{}, total int64, err error) {
+func (userService *UserService) GetUserInfoList(info systemReq.GetUserList, userId uint) (list interface{}, total int64, err error) {
 	limit := info.PageSize
 	offset := info.PageSize * (info.Page - 1)
 	db := global.GVA_DB.Model(&system.SysUser{})
@@ -104,6 +112,17 @@ func (userService *UserService) GetUserInfoList(info systemReq.GetUserList) (lis
 	if info.Email != "" {
 		db = db.Where("email LIKE ?", "%"+info.Email+"%")
 	}
+	// 部门筛选：含子部门
+	if info.DepartmentId > 0 {
+		deptIds, deptErr := DepartmentServiceApp.GetDepartmentSubTreeIds(info.DepartmentId)
+		if deptErr != nil {
+			return nil, 0, deptErr
+		}
+		db = db.Where("department_id IN ?", deptIds)
+	}
+
+	// 数据权限过滤：部门列=department_id，本人列=id（"仅本人"=只能看到自己的账号记录）
+	db = db.Scopes(DataScopeServiceApp.Scope(userId, "department_id", "id"))
 
 	err = db.Count(&total).Error
 	if err != nil {
@@ -127,7 +146,7 @@ func (userService *UserService) GetUserInfoList(info systemReq.GetUserList) (lis
 		}
 	}
 
-	err = db.Limit(limit).Offset(offset).Order(orderStr).Preload("Authorities").Preload("Authority").Find(&userList).Error
+	err = db.Limit(limit).Offset(offset).Order(orderStr).Preload("Department").Preload("Authorities").Preload("Authority").Find(&userList).Error
 	return userList, total, err
 }
 
@@ -246,16 +265,24 @@ func (userService *UserService) DeleteUser(id int) (err error) {
 //@return: err error, user model.SysUser
 
 func (userService *UserService) SetUserInfo(req system.SysUser) error {
+	if req.DepartmentId != 0 {
+		var count int64
+		global.GVA_DB.Model(&system.SysDepartment{}).Where("id = ?", req.DepartmentId).Count(&count)
+		if count == 0 {
+			return errors.New("所选部门不存在")
+		}
+	}
 	return global.GVA_DB.Model(&system.SysUser{}).
-		Select("updated_at", "nick_name", "header_img", "phone", "email", "enable").
+		Select("updated_at", "nick_name", "header_img", "phone", "email", "enable", "department_id").
 		Where("id=?", req.ID).
 		Updates(map[string]interface{}{
-			"updated_at": time.Now(),
-			"nick_name":  req.NickName,
-			"header_img": req.HeaderImg,
-			"phone":      req.Phone,
-			"email":      req.Email,
-			"enable":     req.Enable,
+			"updated_at":    time.Now(),
+			"nick_name":     req.NickName,
+			"header_img":    req.HeaderImg,
+			"phone":         req.Phone,
+			"email":         req.Email,
+			"enable":        req.Enable,
+			"department_id": req.DepartmentId,
 		}).Error
 }
 
@@ -290,7 +317,7 @@ func (userService *UserService) SetSelfSetting(req common.JSONMap, uid uint) err
 
 func (userService *UserService) GetUserInfo(uuid uuid.UUID) (user system.SysUser, err error) {
 	var reqUser system.SysUser
-	err = global.GVA_DB.Preload("Authorities").Preload("Authority").First(&reqUser, "uuid = ?", uuid).Error
+	err = global.GVA_DB.Preload("Department").Preload("Authorities").Preload("Authority").First(&reqUser, "uuid = ?", uuid).Error
 	if err != nil {
 		return reqUser, err
 	}

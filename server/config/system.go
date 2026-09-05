@@ -12,4 +12,12 @@ type System struct {
 	UseMongo      bool   `mapstructure:"use-mongo" json:"use-mongo" yaml:"use-mongo"`                   // 使用mongo
 	UseStrictAuth bool   `mapstructure:"use-strict-auth" json:"use-strict-auth" yaml:"use-strict-auth"` // 使用树形角色分配模式
 	DisableAutoMigrate   bool   `mapstructure:"disable-auto-migrate" json:"disable-auto-migrate" yaml:"disable-auto-migrate"`          // 自动迁移数据库表结构，生产环境建议设为false，手动迁移
+	DataPermission DataPermission `mapstructure:"data-permission" json:"data-permission" yaml:"data-permission"` // 数据权限体系配置
+}
+
+// DataPermission 数据权限配置
+type DataPermission struct {
+	Enable   bool `mapstructure:"enable" json:"enable" yaml:"enable"`           // 数据权限总开关，关闭时引擎直接放行
+	Seed     bool `mapstructure:"seed" json:"seed" yaml:"seed"`                 // 启动时幂等补种菜单/API/casbin规则
+	SeedDemo bool `mapstructure:"seed-demo" json:"seed-demo" yaml:"seed-demo"` // 公司表为空时插入演示组织数据
 }

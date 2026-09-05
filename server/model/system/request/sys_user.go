@@ -16,6 +16,7 @@ type Register struct {
 	AuthorityIds []uint `json:"authorityIds" swaggertype:"string" example:"[]uint 角色id"`
 	Phone        string `json:"phone" example:"电话号码"`
 	Email        string `json:"email" example:"电子邮箱"`
+	DepartmentId uint   `json:"departmentId" example:"int 主属部门id 0为未分配"`
 }
 
 // Login User login structure
@@ -57,17 +58,19 @@ type ChangeUserInfo struct {
 	Email        string                `json:"email"  gorm:"comment:用户邮箱"`                                                           // 用户邮箱
 	HeaderImg    string                `json:"headerImg" gorm:"default:https://qmplusimg.henrongyi.top/gva_header.jpg;comment:用户头像"` // 用户头像
 	Enable       int                   `json:"enable" gorm:"comment:冻结用户"`                                                           //冻结用户
+	DepartmentId uint                  `json:"departmentId"`                                                                         // 主属部门ID 0为未分配
 	Authorities  []system.SysAuthority `json:"-" gorm:"many2many:sys_user_authority;"`
 }
 
 type GetUserList struct {
 	common.PageInfo
-	Username string `json:"username" form:"username"`
-	NickName string `json:"nickName" form:"nickName"`
-	Phone    string `json:"phone" form:"phone"`
-	Email    string `json:"email" form:"email"`
-	OrderKey string `json:"orderKey" form:"orderKey"` // 排序
-	Desc     bool   `json:"desc" form:"desc"`         // 排序方式:升序false(默认)|降序true
+	Username     string `json:"username" form:"username"`
+	NickName     string `json:"nickName" form:"nickName"`
+	Phone        string `json:"phone" form:"phone"`
+	Email        string `json:"email" form:"email"`
+	DepartmentId uint   `json:"departmentId" form:"departmentId"` // 部门筛选（含子部门）0为不过滤
+	OrderKey     string `json:"orderKey" form:"orderKey"`         // 排序
+	Desc         bool   `json:"desc" form:"desc"`                 // 排序方式:升序false(默认)|降序true
 }
 
 // SetRoleUsers 通过角色ID全量覆盖关联用户列表

@@ -243,6 +243,10 @@ system:
     use-mongo: false
     use-strict-auth: false
     disable-auto-migrate: false
+    data-permission:
+        enable: true      # 数据权限总开关（false 时引擎直接放行）
+        seed: true        # 启动时幂等补种菜单/API/casbin
+        seed-demo: true   # 公司表为空时插入演示组织数据
 tencent-cos:
     bucket: xxxxx-10005608
     region: ap-shanghai

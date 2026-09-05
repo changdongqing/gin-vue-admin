@@ -185,7 +185,7 @@ func (b *BaseApi) Register(c *gin.Context) {
 			AuthorityId: v,
 		})
 	}
-	user := &system.SysUser{Username: r.Username, NickName: r.NickName, Password: r.Password, HeaderImg: r.HeaderImg, AuthorityId: r.AuthorityId, Authorities: authorities, Enable: r.Enable, Phone: r.Phone, Email: r.Email}
+	user := &system.SysUser{Username: r.Username, NickName: r.NickName, Password: r.Password, HeaderImg: r.HeaderImg, AuthorityId: r.AuthorityId, Authorities: authorities, Enable: r.Enable, Phone: r.Phone, Email: r.Email, DepartmentId: r.DepartmentId}
 	userReturn, err := userService.Register(*user)
 	if err != nil {
 		global.GVA_LOG.Error("注册失败!", zap.Error(err))
@@ -247,7 +247,7 @@ func (b *BaseApi) GetUserList(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	list, total, err := userService.GetUserInfoList(pageInfo)
+	list, total, err := userService.GetUserInfoList(pageInfo, utils.GetUserID(c))
 	if err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)
@@ -397,11 +397,12 @@ func (b *BaseApi) SetUserInfo(c *gin.Context) {
 		GVA_MODEL: global.GVA_MODEL{
 			ID: user.ID,
 		},
-		NickName:  user.NickName,
-		HeaderImg: user.HeaderImg,
-		Phone:     user.Phone,
-		Email:     user.Email,
-		Enable:    user.Enable,
+		NickName:     user.NickName,
+		HeaderImg:    user.HeaderImg,
+		Phone:        user.Phone,
+		Email:        user.Email,
+		Enable:       user.Enable,
+		DepartmentId: user.DepartmentId,
 	})
 	if err != nil {
 		global.GVA_LOG.Error("设置失败!", zap.Error(err))

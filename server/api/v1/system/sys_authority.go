@@ -255,3 +255,53 @@ func (a *AuthorityApi) SetRoleUsers(c *gin.Context) {
 	}
 	response.OkWithMessage("设置成功", c)
 }
+
+// SetDataScope
+// @Tags      Authority
+// @Summary   设置角色数据范围
+// @Security  ApiKeyAuth
+// @accept    application/json
+// @Produce   application/json
+// @Param     data  body      systemReq.SetAuthorityDataScope  true  "角色ID, 数据范围档位, 自定义明细"
+// @Success   200   {object}  response.Response{msg=string}    "设置成功"
+// @Router    /authority/setDataScope [post]
+func (a *AuthorityApi) SetDataScope(c *gin.Context) {
+	var req systemReq.SetAuthorityDataScope
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := authorityDataScopeService.SetAuthorityDataScope(req.AuthorityId, req.DataScope, req.CompanyIds, req.DepartmentIds); err != nil {
+		global.GVA_LOG.Error("设置失败!", zap.Error(err))
+		response.FailWithMessage("设置失败"+err.Error(), c)
+		return
+	}
+	response.OkWithMessage("设置成功", c)
+}
+
+// GetDataScope
+// @Tags      Authority
+// @Summary   获取角色数据范围及自定义明细
+// @Security  ApiKeyAuth
+// @Produce   application/json
+// @Param     authorityId  query  uint  true  "角色ID"
+// @Success   200  {object}  response.Response{data=object,msg=string}  "获取成功"
+// @Router    /authority/getDataScope [get]
+func (a *AuthorityApi) GetDataScope(c *gin.Context) {
+	var req systemReq.GetAuthorityDataScope
+	if err := c.ShouldBindQuery(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	dataScope, companyIds, departmentIds, err := authorityDataScopeService.GetAuthorityDataScope(req.AuthorityId)
+	if err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败"+err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(gin.H{
+		"dataScope":     dataScope,
+		"companyIds":    companyIds,
+		"departmentIds": departmentIds,
+	}, "获取成功", c)
+}

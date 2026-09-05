@@ -111,3 +111,33 @@ export const setRoleUsers = (data) => {
     data
   })
 }
+
+/**
+ * 设置角色数据范围
+ * @param {Object} data
+ * @param {number} data.authorityId 角色ID
+ * @param {number} data.dataScope 数据范围 1全部 2自定义 3本公司 4本部门及以下 5本部门 6仅本人
+ * @param {number[]} [data.companyIds] 自定义范围-公司ID列表
+ * @param {number[]} [data.departmentIds] 自定义范围-部门ID列表
+ * @returns {Promise}
+ */
+export const setDataScope = (data) => {
+  return service({
+    url: '/authority/setDataScope',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 获取角色数据范围
+ * @param {number} authorityId 角色ID
+ * @returns {Promise<{dataScope:number, companyIds:number[], departmentIds:number[]}>}
+ */
+export const getDataScope = (authorityId) => {
+  return service({
+    url: '/authority/getDataScope',
+    method: 'get',
+    params: { authorityId }
+  })
+}

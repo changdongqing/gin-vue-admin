@@ -38,6 +38,13 @@
         />
       </template>
 
+      <template #department="{ row }">
+        <el-tag v-if="row.department && row.department.ID" type="info">
+          {{ row.department.name }}
+        </el-tag>
+        <span v-else class="text-gray-400">未分配</span>
+      </template>
+
       <template #enable="{ row }">
         <el-switch
           v-model="row.enable"
@@ -137,6 +144,21 @@
             :clearable="false"
           />
         </el-form-item>
+        <el-form-item label="主属部门" prop="departmentId">
+          <el-tree-select
+            v-model="userInfo.departmentId"
+            :data="departmentTreeData"
+            node-key="ID"
+            :props="{ label: 'name', children: 'children' }"
+            check-strictly
+            :render-after-expand="false"
+            default-expand-all
+            filterable
+            style="width: 100%"
+            placeholder="请选择主属部门(数据权限依据)"
+            clearable
+          />
+        </el-form-item>
         <el-form-item label="启用" prop="disabled">
           <el-switch v-model="userInfo.enable" inline-prompt :active-value="1" :inactive-value="2" />
         </el-form-item>
@@ -159,6 +181,7 @@
   } from '@/api/user'
 
   import { getAuthorityList } from '@/api/authority'
+  import { getDepartmentList } from '@/api/department'
   import GvaGrid, { useGvaGrid, useGvaGridDelete } from '@/components/gvaGrid'
   import CustomPic from '@/components/customPic/index.vue'
   import WarningBar from '@/components/warningBar/warningBar.vue'
@@ -188,6 +211,7 @@
       { field: 'ID', title: 'ID', width: 80, sortable: true },
       { field: 'userName', title: '用户名', minWidth: 150 },
       { field: 'nickName', title: '昵称', minWidth: 150 },
+      { field: 'department', title: '所属部门', minWidth: 140, slots: { default: 'department' } },
       { field: 'phone', title: '手机号', minWidth: 180 },
       { field: 'email', title: '邮箱', minWidth: 180 },
       { field: 'authorities', title: '用户角色', minWidth: 200, slots: { default: 'authorities' } },
@@ -240,7 +264,12 @@
   const initPage = async () => {
     const res = await getAuthorityList()
     setOptions(res.data)
+    const deptRes = await getDepartmentList()
+    departmentTreeData.value = deptRes.data.list || []
   }
+
+  // 部门树（主属部门选择）
+  const departmentTreeData = ref([])
 
   initPage()
 
@@ -328,6 +357,7 @@
     headerImg: '',
     authorityId: '',
     authorityIds: [],
+    departmentId: 0,
     enable: 1
   })
 
@@ -390,6 +420,7 @@
     userForm.value.resetFields()
     userInfo.value.headerImg = ''
     userInfo.value.authorityIds = []
+    userInfo.value.departmentId = 0
     addUserDialog.value = false
   }
 

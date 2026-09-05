@@ -28,6 +28,8 @@ type ApiGroup struct {
 	ApiTokenApi
 	SkillsApi
 	AIWorkflowSessionApi
+	CompanyApi
+	DepartmentApi
 }
 
 var (
@@ -56,4 +58,7 @@ var (
 	loginLogService          = service.ServiceGroupApp.SystemServiceGroup.LoginLogService
 	apiTokenService          = service.ServiceGroupApp.SystemServiceGroup.ApiTokenService
 	skillsService            = service.ServiceGroupApp.SystemServiceGroup.SkillsService
+	companyService           = service.ServiceGroupApp.SystemServiceGroup.CompanyService
+	departmentService        = service.ServiceGroupApp.SystemServiceGroup.DepartmentService
+	authorityDataScopeService = service.ServiceGroupApp.SystemServiceGroup.AuthorityDataScopeService
 )

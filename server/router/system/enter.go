@@ -24,6 +24,8 @@ type RouterGroup struct {
 	LoginLogRouter
 	ApiTokenRouter
 	SkillsRouter
+	CompanyRouter
+	DepartmentRouter
 }
 
 var (
@@ -50,4 +52,6 @@ var (
 	sysErrorApi          = api.ApiGroupApp.SystemApiGroup.SysErrorApi
 	skillsApi            = api.ApiGroupApp.SystemApiGroup.SkillsApi
 	aiWorkflowSessionApi = api.ApiGroupApp.SystemApiGroup.AIWorkflowSessionApi
+	companyApi           = api.ApiGroupApp.SystemApiGroup.CompanyApi
+	departmentApi        = api.ApiGroupApp.SystemApiGroup.DepartmentApi
 )

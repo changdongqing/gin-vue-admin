@@ -20,6 +20,10 @@ func Viper() *viper.Viper {
 	v := viper.New()
 	v.SetConfigFile(config)
 	v.SetConfigType("yaml")
+	// 数据权限体系默认值（配置文件未写 data-permission 节时保持默认开启）
+	v.SetDefault("system.data-permission.enable", true)
+	v.SetDefault("system.data-permission.seed", true)
+	v.SetDefault("system.data-permission.seed-demo", true)
 	err := v.ReadInConfig()
 	if err != nil {
 		panic(fmt.Errorf("fatal error config file: %w", err))

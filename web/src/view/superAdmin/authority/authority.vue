@@ -86,6 +86,9 @@
             @changeRow="changeRow"
           />
         </el-tab-pane>
+        <el-tab-pane label="数据权限">
+          <DataScope ref="dataScope" :row="activeRow" />
+        </el-tab-pane>
       </el-tabs>
     </el-drawer>
 
@@ -165,6 +168,7 @@
   import Menus from '@/view/superAdmin/authority/components/menus.vue'
   import Apis from '@/view/superAdmin/authority/components/apis.vue'
   import Datas from '@/view/superAdmin/authority/components/datas.vue'
+  import DataScope from '@/view/superAdmin/authority/components/dataScope.vue'
   import WarningBar from '@/components/warningBar/warningBar.vue'
 
   import { ref, nextTick } from 'vue'
@@ -242,8 +246,9 @@
   const menus = ref(null)
   const apis = ref(null)
   const datas = ref(null)
+  const dataScope = ref(null)
   const autoEnter = (activeName, oldActiveName) => {
-    const paneArr = [menus, apis, datas]
+    const paneArr = [menus, apis, datas, dataScope]
     if (oldActiveName) {
       if (paneArr[oldActiveName].value.needConfirm) {
         paneArr[oldActiveName].value.enterAndNext()

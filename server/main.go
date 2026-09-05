@@ -46,6 +46,7 @@ func initializeSystem() {
 	initialize.DBList()
 	initialize.SetupHandlers() // 注册全局函数
 	if global.GVA_DB != nil {
-		initialize.RegisterTables() // 初始化表
+		initialize.RegisterTables()          // 初始化表
+		initialize.SeedDataPermission()      // 数据权限体系幂等种子（菜单/API/casbin/演示组织）
 	}
 }

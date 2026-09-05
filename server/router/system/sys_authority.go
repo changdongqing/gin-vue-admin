@@ -17,9 +17,11 @@ func (s *AuthorityRouter) InitAuthorityRouter(Router *gin.RouterGroup) {
 		authorityRouter.POST("copyAuthority", authorityApi.CopyAuthority)       // 拷贝角色
 		authorityRouter.POST("setDataAuthority", authorityApi.SetDataAuthority) // 设置角色资源权限
 		authorityRouter.POST("setRoleUsers", authorityApi.SetRoleUsers)         // 全量覆盖角色关联用户
+		authorityRouter.POST("setDataScope", authorityApi.SetDataScope)         // 设置角色数据范围
 	}
 	{
 		authorityRouterWithoutRecord.POST("getAuthorityList", authorityApi.GetAuthorityList)     // 获取角色列表
 		authorityRouterWithoutRecord.GET("getUsersByAuthority", authorityApi.GetUsersByAuthority) // 获取角色关联用户ID列表
+		authorityRouterWithoutRecord.GET("getDataScope", authorityApi.GetDataScope)              // 获取角色数据范围
 	}
 }
