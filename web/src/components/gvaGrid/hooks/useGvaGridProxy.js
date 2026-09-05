@@ -96,7 +96,8 @@ export function buildProxyConfig(options = {}) {
   return {
     form: true,
     // 注意：必须用 response 而非 props（vxe 全局默认 response 永远覆盖 props 旧式配置）
-    response: { result: 'result', total: 'total', message: 'message' },
+    // list 供 pagerConfig 为 null（pager: false）时使用：vxe 无分页分支只认 response.list 或数组返回
+    response: { result: 'result', list: 'result', total: 'total', message: 'message' },
     autoLoad: options.autoLoad !== false,
     ajax: {
       query,

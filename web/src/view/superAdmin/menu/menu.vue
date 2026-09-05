@@ -507,6 +507,7 @@
   })
 
   // 菜单树：无分页无搜索，接口直接返回树数组
+  const menuTreeData = ref([])
   const { gridRef, gridOptions, gridEvents, refresh } = useGvaGrid({
     id: 'superAdmin-menu',
     pager: false,
@@ -514,6 +515,7 @@
     api: async () => {
       const res = await getMenuList()
       const list = res.data || []
+      menuTreeData.value = list
       return { ...res, data: { list, total: list.length } }
     },
     gridConfig: {
@@ -699,7 +701,7 @@
         title: '根目录'
       }
     ]
-    setMenuOptions(tableData.value, menuOption.value, false)
+    setMenuOptions(menuTreeData.value, menuOption.value, false)
   }
   const setMenuOptions = (menuData, optionsData, disabled) => {
     menuData &&

@@ -4,7 +4,8 @@
 export const GVA_GRID_DEFAULTS = {
   // 对齐现有 el-table 视觉（36/32px 行高，element_visiable.scss 覆写值）
   size: 'medium',
-  border: false,
+  // 全边框：所有单元格显示横竖分割线（vxe border='full'）
+  border: 'full',
   stripe: false,
   align: 'left',
   // 全局单行省略 + tooltip（替代逐列 show-overflow-tooltip）
