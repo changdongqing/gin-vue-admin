@@ -100,13 +100,13 @@ embed.go                 # go:embed *.sql，迁移文件编译进二进制
 | `force:1` 修复 + 重启 | ✅ version=1 dirty=false，正常启动 |
 | 迁移文件版本冲突（两个 000002） | ✅ 启动即报 duplicate 拒绝，防呆生效 |
 
-## 7. 范围与扩展
+## 7. 范围与决策
 
-- 当前支持 `db-type: pgsql`；其他库类型自动跳过并告警（AutoMigrate 继续兜底）。
-  mysql 扩展：在 `initialize/migrate.go` import `migrate/database/mysql` 并仿照
-  `postgres.WithInstance` 增加分支即可（迁移文件与版本机制完全一致，但注意
-  pg_dump 生成的 baseline 需替换为 mysql 版快照）。
+- **业务库仅适配 PostgreSQL（`db-type: pgsql`）**：迁移执行器与全部迁移 SQL 只按
+  pgsql 语义编写与验证；其他库类型配置会告警并跳过迁移（AutoMigrate 兜底），
+  遇到时应改用 pgsql，不为此扩展 mysql/mssql/oracle/sqlite 的迁移支持。
 - `schema_migrations` 由 golang-migrate 自动管理，勿手工删改；彻底重建环境时
   直接 drop database 或 `down` 至空。
 - 与 `sys_versions`（发版公告）职责不同：前者是结构迁移史，后者是业务发版记录；
   如需打通可后续将发版记录关联迁移版本号。
+- 长期规范（后续开发必须遵守）见 `aiDoc/memory/long-term/db-migration-rules.md`。

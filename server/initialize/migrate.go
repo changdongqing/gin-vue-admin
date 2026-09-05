@@ -21,8 +21,8 @@ import (
 //     之后的结构变更从 000002 增量迁移开始受版本管理；
 //  3. 已版本化库：执行未应用的增量迁移（Up），出错时保持 dirty 状态人工介入。
 //
-// 当前支持 db-type = pgsql。mysql 扩展：import migrate/database/mysql 并仿照
-// postgres.WithInstance 分支即可，迁移 SQL 与版本机制完全一致。
+// 业务库决策：仅适配 PostgreSQL（pgsql），不扩展其它数据库的迁移支持；
+// 非 pgsql 配置直接告警并跳过迁移（AutoMigrate 兜底），遇到时应改用 pgsql。
 func MigrateDatabase() {
 	cfg := global.GVA_CONFIG
 	if !cfg.Migrate.Enable {
@@ -30,7 +30,7 @@ func MigrateDatabase() {
 		return
 	}
 	if cfg.System.DbType != "pgsql" {
-		global.GVA_LOG.Warn(fmt.Sprintf("versioned migration not support db-type %q yet, fallback to AutoMigrate only", cfg.System.DbType))
+		global.GVA_LOG.Warn(fmt.Sprintf("versioned migration supports pgsql only, db-type %q skipped (fallback to AutoMigrate)", cfg.System.DbType))
 		return
 	}
 	// 存量库自动基线固化：无版本表但有业务表。

@@ -61,6 +61,13 @@
 - 示例文档不是要求逐字复制，而是告诉 AI 该如何按项目标准组织代码
 - 当 AI 需要新增某一层文件时，应先阅读对应示例，再开始实现
 
+### 数据库与迁移
+
+- 数据库结构变更一律编写版本化迁移（`server/migrations/00000N_*.{up,down}.sql`），禁止修改已发布的迁移
+- 业务库仅适配 PostgreSQL（`db-type: pgsql`），不扩展其它数据库的迁移支持
+- 双轨机制：AutoMigrate 仅作开发期兜底；生产 `disable-auto-migrate: true` 时以迁移文件为准
+- 详细规范见 `aiDoc/memory/long-term/db-migration-rules.md`，操作 SOP 见 `aiDoc/db-migration/README.md`
+
 ### 记忆规则
 
 - `aiDoc/memory/long-term/` 用于记录长期稳定的用户偏好、协作方式和跨任务约束
@@ -112,3 +119,4 @@
 - `aiDoc/memory/project-memory.md`
 - `aiDoc/memory/long-term/`
 - `aiDoc/memory/business/`
+- `aiDoc/db-migration/README.md`

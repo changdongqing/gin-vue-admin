@@ -6,4 +6,4 @@
 
 ## Done
 
-- 暂无
+- [数据库版本化迁移（方案A）落地与 pgsql 决策固化](done/db-versioned-migration.md)
