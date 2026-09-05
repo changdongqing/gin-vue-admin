@@ -1,6 +1,7 @@
 <template>
   <div class="h-full">
-    <GvaGrid ref="gridRef" v-bind="gridOptions" v-on="gridEvents" height="auto">
+    <!-- fit 测量模式： splitter 面板无确定高度链，按 .gva-container2 实测定高；下方无 BottomInfo，预留 0 -->
+    <GvaGrid ref="gridRef" v-bind="gridOptions" v-on="gridEvents" height="fit" :bottom-reserve="0">
       <template #toolbar-buttons>
         <span class="text font-bold">字典详细内容</span>
       </template>
