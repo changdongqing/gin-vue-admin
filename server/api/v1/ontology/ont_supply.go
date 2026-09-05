@@ -106,3 +106,20 @@ func (api *SupplyApi) ConvertUnitForSupply(c *gin.Context) {
 	unitApi := UnitApi{}
 	unitApi.ConvertUnit(c)
 }
+
+// GetAnnotationPropertiesForSupply 供给：注释属性全量注册表（FR-5）
+// @Tags      本体供给
+// @Summary   供给注释属性注册表（建模侧序列化器/解析器遍历驱动 ont:xxx 读写）
+// @Security  ApiKeyAuth
+// @Produce   application/json
+// @Success   200 {object} response.Response{data=[]ontology.OntAnnotationProperty,msg=string}
+// @Router    /ontology/supply/v1/annotationProperties [get]
+func (api *SupplyApi) GetAnnotationPropertiesForSupply(c *gin.Context) {
+	list, err := AnnotationPropertyService.GetAnnotationPropertiesForSupply()
+	if err != nil {
+		global.GVA_LOG.Error("供给查询失败!", zap.Error(err))
+		response.FailWithMessage("供给查询失败:"+err.Error(), c)
+		return
+	}
+	response.OkWithData(list, c)
+}

@@ -54,6 +54,7 @@ func seedOntologyMenus() {
 		{Name: "propertyTemplate", Title: "属性模板库", Icon: "document", Component: "view/ontology/propertyTemplate/propertyTemplate.vue", Sort: 1},
 		{Name: "classTemplate", Title: "分类模板", Icon: "grid", Component: "view/ontology/classTemplate/classTemplate.vue", Sort: 2},
 		{Name: "unit", Title: "单位注册表", Icon: "scale-to-original", Component: "view/ontology/unit/unit.vue", Sort: 3},
+		{Name: "annotationProperty", Title: "注释属性注册表", Icon: "collection", Component: "view/ontology/annotationProperty/annotationProperty.vue", Sort: 4},
 	}
 	for _, s := range seeds {
 		var count int64
@@ -138,11 +139,19 @@ func seedOntologyApis() {
 		{"/ontology/unit/getUnitAll", "GET", "本体治理", "全量单位下拉"},
 		{"/ontology/unit/convertUnit", "GET", "本体治理", "单位换算试算"},
 		{"/ontology/quantityKind/getQuantityKindList", "GET", "本体治理", "量纲列表"},
+		{"/ontology/annotationProperty/createAnnotationProperty", "POST", "本体治理", "创建注释属性"},
+		{"/ontology/annotationProperty/updateAnnotationProperty", "PUT", "本体治理", "更新注释属性"},
+		{"/ontology/annotationProperty/deleteAnnotationProperty", "DELETE", "本体治理", "删除注释属性"},
+		{"/ontology/annotationProperty/findAnnotationProperty", "GET", "本体治理", "查询注释属性详情"},
+		{"/ontology/annotationProperty/getAnnotationPropertyList", "GET", "本体治理", "分页查询注释属性"},
+		{"/ontology/annotationProperty/getAnnotationPropertyAll", "GET", "本体治理", "全量注释属性"},
+		{"/ontology/annotationProperty/exportAnnotationPropertyExcel", "GET", "本体治理", "导出注释属性清单"},
 		{"/ontology/supply/v1/propertyTemplates", "GET", "本体供给", "供给属性模板列表"},
 		{"/ontology/supply/v1/classTemplate/tree", "GET", "本体供给", "供给分类模板树"},
 		{"/ontology/supply/v1/classHierarchy/suggest", "GET", "本体供给", "类层级建议"},
 		{"/ontology/supply/v1/units", "GET", "本体供给", "供给单位清单"},
 		{"/ontology/supply/v1/units/convert", "GET", "本体供给", "供给单位换算"},
+		{"/ontology/supply/v1/annotationProperties", "GET", "本体供给", "供给注释属性注册表"},
 	}
 	// 治理 CRUD 授 888；供给接口额外授予「建模师」角色（若存在）
 	governanceRoles := []string{"888"}

@@ -8,6 +8,7 @@ type RouterGroup struct {
 	PropertyTemplateRouter
 	ClassTemplateRouter
 	UnitRouter
+	AnnotationPropertyRouter
 	SupplyRouter
 }
 
@@ -17,5 +18,6 @@ var (
 	ruleApi         = api.ApiGroupApp.OntologyApiGroup.ClassificationRuleApi
 	unitApi         = api.ApiGroupApp.OntologyApiGroup.UnitApi
 	quantityKindApi = api.ApiGroupApp.OntologyApiGroup.QuantityKindApi
+	apApi           = api.ApiGroupApp.OntologyApiGroup.AnnotationPropertyApi
 	supplyApi       = api.ApiGroupApp.OntologyApiGroup.SupplyApi
 )

@@ -16,5 +16,6 @@ func (r *SupplyRouter) InitSupplyRouter(Router *gin.RouterGroup) {
 		supply.GET("classHierarchy/suggest", supplyApi.SuggestClassHierarchy)
 		supply.GET("units", supplyApi.GetUnitsForSupply)
 		supply.GET("units/convert", supplyApi.ConvertUnitForSupply)
+		supply.GET("annotationProperties", supplyApi.GetAnnotationPropertiesForSupply)
 	}
 }

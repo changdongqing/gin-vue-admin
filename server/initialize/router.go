@@ -105,6 +105,7 @@ func Routers() *gin.Engine {
 		ontologyRouter.InitPropertyTemplateRouter(PrivateGroup)             // 本体属性模板
 		ontologyRouter.InitClassTemplateRouter(PrivateGroup)                // 本体分类模板
 		ontologyRouter.InitUnitRouter(PrivateGroup)                         // 本体单位/量纲
+		ontologyRouter.InitAnnotationPropertyRouter(PrivateGroup)           // 本体注释属性注册表
 		ontologyRouter.InitSupplyRouter(PrivateGroup)                       // 本体供给（只读）
 	}
 

@@ -10,6 +10,7 @@ type ApiGroup struct {
 	ClassificationRuleApi
 	UnitApi
 	QuantityKindApi
+	AnnotationPropertyApi
 	SupplyApi
 }
 
@@ -19,4 +20,5 @@ var (
 	ClassificationRuleService = service.ServiceGroupApp.OntologyServiceGroup.ClassificationRuleService
 	UnitService               = service.ServiceGroupApp.OntologyServiceGroup.UnitService
 	QuantityKindService       = service.ServiceGroupApp.OntologyServiceGroup.QuantityKindService
+	AnnotationPropertyService = service.ServiceGroupApp.OntologyServiceGroup.AnnotationPropertyService
 )
