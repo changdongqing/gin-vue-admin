@@ -86,7 +86,7 @@ func seedMenus() {
 		}
 		if err := db.Table("sys_authority_menus").
 			Create(map[string]interface{}{
-				"sys_base_menu_id":            m.ID,
+				"sys_base_menu_id":           m.ID,
 				"sys_authority_authority_id": 888,
 			}).Error; err != nil {
 			global.GVA_LOG.Error("数据权限种子：角色菜单授权失败", zap.Uint("menuId", m.ID), zap.Error(err))
@@ -178,7 +178,11 @@ func seedDemoOrg() {
 		}
 		companyIds[i] = company.ID
 	}
-	type dSeed struct{ CompanyIdx int; Name, Code string; ParentCode string }
+	type dSeed struct {
+		CompanyIdx int
+		Name, Code string
+		ParentCode string
+	}
 	departments := []dSeed{
 		{0, "集团总部", "GVA-GROUP-HQ", ""},
 		{0, "财务部", "GVA-GROUP-FIN", ""},
