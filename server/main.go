@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+
 	"github.com/flipped-aurora/gin-vue-admin/server/core"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/initialize"
@@ -27,9 +29,17 @@ import (
 // @in                          header
 // @name                        x-token
 // @BasePath                    /
+// 迁移运维命令（包级注册，与 core.Viper 内部注册的 -c 同集合，由 core.Viper 统一 flag.Parse）
+var migrateCmd = flag.String("migrate-cmd", "", "版本化迁移命令: up | down | down:N | force:N | version")
+
 func main() {
 	// 初始化系统
 	initializeSystem()
+	// 迁移命令执行后直接退出，不启动 Web 服务
+	if *migrateCmd != "" {
+		initialize.RunMigrateCommand(*migrateCmd)
+		return
+	}
 	// 运行服务器
 	core.RunServer()
 }
@@ -46,7 +56,8 @@ func initializeSystem() {
 	initialize.DBList()
 	initialize.SetupHandlers() // 注册全局函数
 	if global.GVA_DB != nil {
-		initialize.RegisterTables()          // 初始化表
-		initialize.SeedDataPermission()      // 数据权限体系幂等种子（菜单/API/casbin/演示组织）
+		initialize.MigrateDatabase()    // 版本化数据库迁移（先于 AutoMigrate，保证变更按版本落地）
+		initialize.RegisterTables()     // AutoMigrate 兜底（纯新增表/列，幂等）
+		initialize.SeedDataPermission() // 数据权限体系幂等种子（菜单/API/casbin/演示组织）
 	}
 }

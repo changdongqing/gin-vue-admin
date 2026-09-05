@@ -24,6 +24,9 @@ func Viper() *viper.Viper {
 	v.SetDefault("system.data-permission.enable", true)
 	v.SetDefault("system.data-permission.seed", true)
 	v.SetDefault("system.data-permission.seed-demo", true)
+	// 版本化迁移默认值
+	v.SetDefault("migrate.enable", true)
+	v.SetDefault("migrate.baseline-version", 1)
 	err := v.ReadInConfig()
 	if err != nil {
 		panic(fmt.Errorf("fatal error config file: %w", err))

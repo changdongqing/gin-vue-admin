@@ -9,6 +9,7 @@ type Server struct {
 	Email     Email   `mapstructure:"email" json:"email" yaml:"email"`
 	System    System  `mapstructure:"system" json:"system" yaml:"system"`
 	Captcha   Captcha `mapstructure:"captcha" json:"captcha" yaml:"captcha"`
+	Migrate   Migrate `mapstructure:"migrate" json:"migrate" yaml:"migrate"`
 	// auto
 	AutoCode Autocode `mapstructure:"autocode" json:"autocode" yaml:"autocode"`
 	// gorm

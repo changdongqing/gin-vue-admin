@@ -247,6 +247,9 @@ system:
         enable: true      # 数据权限总开关（false 时引擎直接放行）
         seed: true        # 启动时幂等补种菜单/API/casbin
         seed-demo: true   # 公司表为空时插入演示组织数据
+migrate:
+    enable: true          # 启动时执行版本化数据库迁移（golang-migrate，迁移文件内嵌于二进制）
+    baseline-version: 1   # 存量库自动固化到的基线版本号（schema_migrations 不存在且库中已有业务表时生效）
 tencent-cos:
     bucket: xxxxx-10005608
     region: ap-shanghai
