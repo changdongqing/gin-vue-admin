@@ -55,8 +55,7 @@ func (s *PropertyTemplateService) UpdatePropertyTemplate(t *ontology.OntProperty
 	}).Error
 }
 
-// DeletePropertyTemplate 删除（builtin 拒绝；软删除，软删后编码可复用）
-// TODO(02 分类模板就绪后): 删除前校验 ont_class_template_refs 引用计数，被引用则拒绝
+// DeletePropertyTemplate 删除（builtin 拒绝；被分类模板骨架引用时拒绝；软删除，软删后编码可复用）
 func (s *PropertyTemplateService) DeletePropertyTemplate(id uint) error {
 	var existing ontology.OntPropertyTemplate
 	if err := global.GVA_DB.First(&existing, id).Error; err != nil {
@@ -64,6 +63,14 @@ func (s *PropertyTemplateService) DeletePropertyTemplate(id uint) error {
 	}
 	if existing.Source == "builtin" {
 		return errors.New("内置属性模板不可删除")
+	}
+	// 引用计数校验（02 分类模板骨架落地）：被未删除的骨架引用则拒绝
+	var refCount int64
+	global.GVA_DB.Model(&ontology.OntClassTemplateRef{}).
+		Where("property_template_code = ?", existing.TemplateCode).
+		Count(&refCount)
+	if refCount > 0 {
+		return errors.New("属性模板已被分类模板骨架引用，不可删除")
 	}
 	return global.GVA_DB.Delete(&ontology.OntPropertyTemplate{}, id).Error
 }

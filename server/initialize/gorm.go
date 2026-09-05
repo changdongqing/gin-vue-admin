@@ -71,6 +71,10 @@ func RegisterTables() {
 		system.SysAuthorityDataScope{},
 
 		ontology.OntPropertyTemplate{},
+		ontology.OntClassTemplate{},
+		ontology.OntClassTemplateRef{},
+		ontology.OntClassificationRule{},
+		ontology.OntClassHierarchy{},
 
 		example.ExaFile{},
 		example.ExaCustomer{},

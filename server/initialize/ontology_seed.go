@@ -52,6 +52,7 @@ func seedOntologyMenus() {
 	}
 	seeds := []menuSeed{
 		{Name: "propertyTemplate", Title: "属性模板库", Icon: "document", Component: "view/ontology/propertyTemplate/propertyTemplate.vue", Sort: 1},
+		{Name: "classTemplate", Title: "分类模板", Icon: "grid", Component: "view/ontology/classTemplate/classTemplate.vue", Sort: 2},
 	}
 	for _, s := range seeds {
 		var count int64
@@ -114,7 +115,22 @@ func seedOntologyApis() {
 		{"/ontology/propertyTemplate/getPropertyTemplateAll", "GET", "本体治理", "全量属性模板下拉"},
 		{"/ontology/propertyTemplate/checkPropertyTemplateCode", "GET", "本体治理", "属性模板编码查重"},
 		{"/ontology/propertyTemplate/promotePropertyTemplate", "POST", "本体治理", "属性快照提升为模板"},
+		{"/ontology/classTemplate/createClassTemplate", "POST", "本体治理", "创建分类模板"},
+		{"/ontology/classTemplate/updateClassTemplate", "PUT", "本体治理", "更新分类模板"},
+		{"/ontology/classTemplate/deleteClassTemplate", "DELETE", "本体治理", "删除分类模板"},
+		{"/ontology/classTemplate/disableClassTemplate", "PUT", "本体治理", "弃用/取消弃用分类模板"},
+		{"/ontology/classTemplate/findClassTemplate", "GET", "本体治理", "查询分类模板详情"},
+		{"/ontology/classTemplate/getClassTemplateList", "GET", "本体治理", "扁平全量分类模板"},
+		{"/ontology/classTemplate/getClassTemplatePage", "GET", "本体治理", "分页查询分类模板"},
+		{"/ontology/classTemplate/getClassTemplateTreeRoots", "GET", "本体治理", "分类树下拉"},
+		{"/ontology/classTemplate/getClassTemplateRefList", "GET", "本体治理", "骨架引用列表"},
+		{"/ontology/classTemplate/getClassTemplateInherited", "GET", "本体治理", "分类模板继承视图"},
+		{"/ontology/classTemplate/previewClassificationCode", "GET", "本体治理", "分类编码预览"},
+		{"/ontology/classificationRule/findClassificationRule", "GET", "本体治理", "查询分类编码规则"},
+		{"/ontology/classificationRule/saveClassificationRule", "PUT", "本体治理", "保存分类编码规则"},
 		{"/ontology/supply/v1/propertyTemplates", "GET", "本体供给", "供给属性模板列表"},
+		{"/ontology/supply/v1/classTemplate/tree", "GET", "本体供给", "供给分类模板树"},
+		{"/ontology/supply/v1/classHierarchy/suggest", "GET", "本体供给", "类层级建议"},
 	}
 	// 治理 CRUD 授 888；供给接口额外授予「建模师」角色（若存在）
 	governanceRoles := []string{"888"}

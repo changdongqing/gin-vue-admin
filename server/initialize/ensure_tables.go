@@ -63,6 +63,10 @@ func (e *ensureTables) MigrateTable(ctx context.Context) (context.Context, error
 		sysModel.SysDepartment{},
 		sysModel.SysAuthorityDataScope{},
 		ontModel.OntPropertyTemplate{},
+		ontModel.OntClassTemplate{},
+		ontModel.OntClassTemplateRef{},
+		ontModel.OntClassificationRule{},
+		ontModel.OntClassHierarchy{},
 		adapter.CasbinRule{},
 
 		example.ExaFile{},

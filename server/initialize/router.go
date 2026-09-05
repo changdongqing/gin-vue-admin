@@ -103,6 +103,7 @@ func Routers() *gin.Engine {
 		exampleRouter.InitFileUploadAndDownloadRouter(PrivateGroup)         // 文件上传下载功能路由
 		exampleRouter.InitAttachmentCategoryRouterRouter(PrivateGroup)      // 文件上传下载分类
 		ontologyRouter.InitPropertyTemplateRouter(PrivateGroup)             // 本体属性模板
+		ontologyRouter.InitClassTemplateRouter(PrivateGroup)                // 本体分类模板
 		ontologyRouter.InitSupplyRouter(PrivateGroup)                       // 本体供给（只读）
 	}
 
