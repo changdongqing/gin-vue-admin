@@ -8,6 +8,8 @@ export const GVA_GRID_DEFAULTS = {
   border: 'full',
   stripe: false,
   align: 'left',
+  // 表头统一居中（列可通过自身 headerAlign 覆盖）
+  headerAlign: 'center',
   // 全局单行省略 + tooltip（替代逐列 show-overflow-tooltip）
   showOverflow: true,
   rowConfig: {
