@@ -14,4 +14,9 @@ type ServiceGroup struct {
 	ClassInstantiationService
 	DatatypePropertyService
 	ObjectPropertyService
+	ExtModuleService
+	ExtTableService
+	ExtBindingService
+	ExtSyncService
+	ExtDynamicQueryService
 }

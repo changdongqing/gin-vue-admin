@@ -112,6 +112,10 @@ func Routers() *gin.Engine {
 		ontologyRouter.InitModelClassRouter(PrivateGroup)                   // 本体建模·类建模
 		ontologyRouter.InitModelDatatypePropertyRouter(PrivateGroup)        // 本体建模·数据属性
 		ontologyRouter.InitModelObjectPropertyRouter(PrivateGroup)          // 本体建模·对象属性
+		ontologyRouter.InitExtModuleRouter(PrivateGroup)                    // 本体建模·外部模块注册
+		ontologyRouter.InitExtTableRouter(PrivateGroup)                     // 本体建模·外部表注册
+		ontologyRouter.InitExtBindingRouter(PrivateGroup)                   // 本体建模·类绑定
+		ontologyRouter.InitExtSyncRouter(PrivateGroup)                      // 本体建模·同步中心
 	}
 
 	//插件路由安装

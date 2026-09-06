@@ -15,6 +15,10 @@ type RouterGroup struct {
 	ModelClassRouter
 	ModelDatatypePropertyRouter
 	ModelObjectPropertyRouter
+	ExtModuleRouter
+	ExtTableRouter
+	ExtBindingRouter
+	ExtSyncRouter
 }
 
 var (
@@ -30,4 +34,8 @@ var (
 	mcApi           = api.ApiGroupApp.OntologyApiGroup.ModelClassApi
 	mdpApi          = api.ApiGroupApp.OntologyApiGroup.ModelDatatypePropertyApi
 	mopApi          = api.ApiGroupApp.OntologyApiGroup.ModelObjectPropertyApi
+	emApi           = api.ApiGroupApp.OntologyApiGroup.ExtModuleApi
+	etApi           = api.ApiGroupApp.OntologyApiGroup.ExtTableApi
+	ebApi           = api.ApiGroupApp.OntologyApiGroup.ExtBindingApi
+	esApi           = api.ApiGroupApp.OntologyApiGroup.ExtSyncApi
 )

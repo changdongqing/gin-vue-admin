@@ -148,6 +148,7 @@ func seedOntologyModelMenus() {
 	leaves := []leafSeed{
 		{Name: "modelProject", Path: "project", Title: "本体项目管理", Icon: "folder-opened", Component: "view/ontology/model/project/project.vue", Sort: 1},
 		{Name: "modelClass", Path: "class", Title: "本体类建模", Icon: "connection", Component: "view/ontology/model/class/class.vue", Sort: 2},
+		{Name: "extBinding", Path: "extbinding", Title: "外部模块关联", Icon: "link", Component: "view/ontology/model/extbinding/extbinding.vue", Sort: 3},
 	}
 	for _, s := range leaves {
 		var count int64
@@ -279,6 +280,24 @@ func seedOntologyApis() {
 		{"/ontology/modelObjectProperty/getModelObjectPropertyList", "GET", "本体建模", "分页查询对象属性"},
 		{"/ontology/modelObjectProperty/suggestInverseModelObjectProperty", "GET", "本体建模", "反向关系建议"},
 		{"/ontology/modelObjectProperty/instantiateModelObjectProperty", "POST", "本体建模", "对象属性模板挂载"},
+		{"/ontology/extModule/getExtModuleList", "GET", "本体建模", "外部模块列表"},
+		{"/ontology/extModule/createExtModule", "POST", "本体建模", "新增外部模块"},
+		{"/ontology/extModule/updateExtModule", "PUT", "本体建模", "更新外部模块"},
+		{"/ontology/extModule/deleteExtModule", "DELETE", "本体建模", "删除外部模块"},
+		{"/ontology/extTable/getExtTableList", "GET", "本体建模", "模块下注册表清单"},
+		{"/ontology/extTable/registerExtTables", "POST", "本体建模", "批量注册物理表"},
+		{"/ontology/extTable/deleteExtTable", "DELETE", "本体建模", "删除注册表"},
+		{"/ontology/extTable/probeExtTables", "GET", "本体建模", "探测物理表"},
+		{"/ontology/extTable/getExtTableColumns", "GET", "本体建模", "探测表列"},
+		{"/ontology/extBinding/getExtBindingList", "GET", "本体建模", "绑定分页"},
+		{"/ontology/extBinding/findExtBinding", "GET", "本体建模", "绑定详情"},
+		{"/ontology/extBinding/createExtBinding", "POST", "本体建模", "新建绑定草稿"},
+		{"/ontology/extBinding/updateExtBinding", "POST", "本体建模", "更新绑定草稿"},
+		{"/ontology/extBinding/deleteExtBinding", "DELETE", "本体建模", "删除绑定"},
+		{"/ontology/extBinding/changeExtBindingStatus", "PUT", "本体建模", "绑定生效/停用"},
+		{"/ontology/extSync/dryRunExtSync", "POST", "本体建模", "绑定试运行"},
+		{"/ontology/extSync/triggerExtSync", "POST", "本体建模", "触发同步"},
+		{"/ontology/extSync/getExtSyncLogList", "GET", "本体建模", "同步日志分页"},
 	}
 	// 治理 CRUD 授 888；供给/建模接口额外授予「建模师」角色（若存在）
 	governanceRoles := []string{"888"}

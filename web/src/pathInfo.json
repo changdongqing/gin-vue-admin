@@ -104,5 +104,11 @@
   "/src/view/ontology/model/class/components/classDetail.vue": "ClassDetail",
   "/src/view/ontology/model/class/components/instantiateModal.vue": "InstantiateModal",
   "/src/view/ontology/model/class/components/propertyTemplateSelect.vue": "PropertyTemplateSelect",
-  "/src/view/ontology/model/class/components/propertyForm.vue": "PropertyForm"
+  "/src/view/ontology/model/class/components/propertyForm.vue": "PropertyForm",
+  "/src/view/ontology/model/extbinding/extbinding.vue": "OntExtBinding",
+  "/src/view/ontology/model/extbinding/components/classBinding.vue": "ClassBinding",
+  "/src/view/ontology/model/extbinding/components/registry.vue": "ExtRegistry",
+  "/src/view/ontology/model/extbinding/components/bindingForm.vue": "ExtBindingForm",
+  "/src/view/ontology/model/extbinding/components/dryRunModal.vue": "DryRunModal",
+  "/src/view/ontology/model/extbinding/components/syncCenter.vue": "SyncCenter"
 }

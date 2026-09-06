@@ -17,6 +17,10 @@ type ApiGroup struct {
 	ModelClassApi
 	ModelDatatypePropertyApi
 	ModelObjectPropertyApi
+	ExtModuleApi
+	ExtTableApi
+	ExtBindingApi
+	ExtSyncApi
 }
 
 var (
@@ -32,4 +36,8 @@ var (
 	ClassInstantiationService = service.ServiceGroupApp.OntologyServiceGroup.ClassInstantiationService
 	DatatypePropertyService   = service.ServiceGroupApp.OntologyServiceGroup.DatatypePropertyService
 	ObjectPropertyService     = service.ServiceGroupApp.OntologyServiceGroup.ObjectPropertyService
+	ExtModuleService          = service.ServiceGroupApp.OntologyServiceGroup.ExtModuleService
+	ExtTableService           = service.ServiceGroupApp.OntologyServiceGroup.ExtTableService
+	ExtBindingService         = service.ServiceGroupApp.OntologyServiceGroup.ExtBindingService
+	ExtSyncService            = service.ServiceGroupApp.OntologyServiceGroup.ExtSyncService
 )
