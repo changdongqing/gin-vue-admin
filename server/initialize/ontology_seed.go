@@ -19,6 +19,7 @@ func SeedOntology() {
 		return
 	}
 	seedOntologyMenus()
+	seedOntologyModelMenus()
 	seedOntologyApis()
 }
 
@@ -101,6 +102,97 @@ func seedOntologyMenus() {
 	}
 }
 
+// seedOntologyModelMenus 本体建模域菜单（01/02/03 陆续追加）：
+// 1. 顶级目录 ontology 标题「本体治理」→「本体」（该目录同时容纳治理与建模两组子菜单，幂等 UPDATE 仅改标题）
+// 2. 子目录 model（本体建模，routerHolder）
+// 3. 叶子菜单 modelProject（path=project，Path≠Name，最终 URL /ontology/model/project）
+func seedOntologyModelMenus() {
+	db := global.GVA_DB
+	var dir system.SysBaseMenu
+	if err := db.Where("name = ? AND parent_id = 0", "ontology").First(&dir).Error; err != nil {
+		global.GVA_LOG.Warn("本体建模种子：顶级目录不存在（先启动治理域种子）")
+		return
+	}
+	// 目录更名：仅当仍为旧标题时更新（运维自定义过标题则不动）
+	if dir.Title == "本体治理" {
+		if err := db.Model(&system.SysBaseMenu{}).Where("id = ?", dir.ID).Update("title", "本体").Error; err != nil {
+			global.GVA_LOG.Error("本体建模种子：目录标题更新失败", zap.Error(err))
+		}
+	}
+	// 子目录 model（幂等）
+	var modelDir system.SysBaseMenu
+	if err := db.Where("name = ? AND parent_id = ?", "model", dir.ID).First(&modelDir).Error; err != nil {
+		modelDir = system.SysBaseMenu{
+			ParentId:  dir.ID,
+			Path:      "model",
+			Name:      "model",
+			Hidden:    false,
+			Component: "view/routerHolder.vue",
+			Sort:      90,
+			Meta: system.Meta{
+				Title:     "本体建模",
+				Icon:      "edit-outline",
+				KeepAlive: false,
+			},
+		}
+		if err := db.Create(&modelDir).Error; err != nil {
+			global.GVA_LOG.Error("本体建模种子：子目录创建失败", zap.Error(err))
+			return
+		}
+	}
+	// 叶子菜单（显式 Path；现有治理范式 Path=Name，此处 Path≠Name 必须单独处理）
+	type leafSeed struct {
+		Name, Path, Title, Icon, Component string
+		Sort                               int
+	}
+	leaves := []leafSeed{
+		{Name: "modelProject", Path: "project", Title: "本体项目管理", Icon: "folder-opened", Component: "view/ontology/model/project/project.vue", Sort: 1},
+	}
+	for _, s := range leaves {
+		var count int64
+		db.Model(&system.SysBaseMenu{}).Where("parent_id = ? AND name = ?", modelDir.ID, s.Name).Count(&count)
+		if count > 0 {
+			continue
+		}
+		menu := system.SysBaseMenu{
+			ParentId:  modelDir.ID,
+			Path:      s.Path,
+			Name:      s.Name,
+			Hidden:    false,
+			Component: s.Component,
+			Sort:      s.Sort,
+			Meta: system.Meta{
+				Title:     s.Title,
+				Icon:      s.Icon,
+				KeepAlive: false,
+			},
+		}
+		if err := db.Create(&menu).Error; err != nil {
+			global.GVA_LOG.Error("本体建模种子：菜单创建失败", zap.String("name", s.Name), zap.Error(err))
+			continue
+		}
+	}
+	// ontology 目录 + model 子目录 + 全部叶子授权给 888
+	var menus []system.SysBaseMenu
+	db.Where("id = ? OR parent_id = ? OR parent_id = ?", dir.ID, dir.ID, modelDir.ID).Find(&menus)
+	for _, m := range menus {
+		var count int64
+		db.Table("sys_authority_menus").
+			Where("sys_base_menu_id = ? AND sys_authority_authority_id = ?", m.ID, 888).
+			Count(&count)
+		if count > 0 {
+			continue
+		}
+		if err := db.Table("sys_authority_menus").
+			Create(map[string]interface{}{
+				"sys_base_menu_id":           m.ID,
+				"sys_authority_authority_id": 888,
+			}).Error; err != nil {
+			global.GVA_LOG.Error("本体建模种子：角色菜单授权失败", zap.Uint("menuId", m.ID), zap.Error(err))
+		}
+	}
+}
+
 // seedOntologyApis 登记本体接口并配置 casbin 规则
 func seedOntologyApis() {
 	db := global.GVA_DB
@@ -152,10 +244,21 @@ func seedOntologyApis() {
 		{"/ontology/supply/v1/units", "GET", "本体供给", "供给单位清单"},
 		{"/ontology/supply/v1/units/convert", "GET", "本体供给", "供给单位换算"},
 		{"/ontology/supply/v1/annotationProperties", "GET", "本体供给", "供给注释属性注册表"},
+		{"/ontology/modelProject/createModelProject", "POST", "本体建模", "创建本体项目"},
+		{"/ontology/modelProject/updateModelProject", "PUT", "本体建模", "更新本体项目"},
+		{"/ontology/modelProject/deleteModelProject", "DELETE", "本体建模", "删除本体项目"},
+		{"/ontology/modelProject/findModelProject", "GET", "本体建模", "查询本体项目详情"},
+		{"/ontology/modelProject/getModelProjectList", "GET", "本体建模", "分页查询本体项目"},
+		{"/ontology/modelProject/getModelProjectAll", "GET", "本体建模", "全量本体项目下拉"},
+		{"/ontology/modelProject/checkModelProjectCode", "GET", "本体建模", "本体项目编码查重"},
+		{"/ontology/modelPrefix/getModelPrefixList", "GET", "本体建模", "项目IRI前缀列表"},
+		{"/ontology/modelPrefix/createModelPrefix", "POST", "本体建模", "新增项目IRI前缀"},
+		{"/ontology/modelPrefix/updateModelPrefix", "PUT", "本体建模", "更新项目IRI前缀"},
+		{"/ontology/modelPrefix/deleteModelPrefix", "DELETE", "本体建模", "删除项目IRI前缀"},
 	}
-	// 治理 CRUD 授 888；供给接口额外授予「建模师」角色（若存在）
+	// 治理 CRUD 授 888；供给/建模接口额外授予「建模师」角色（若存在）
 	governanceRoles := []string{"888"}
-	supplyRoles := append([]string{"888"}, findModelerAuthorityIds()...)
+	modelerRoles := append([]string{"888"}, findModelerAuthorityIds()...)
 
 	addedRules := make([][]string, 0)
 	for _, s := range seeds {
@@ -168,8 +271,8 @@ func seedOntologyApis() {
 			}
 		}
 		roles := governanceRoles
-		if s.Group == "本体供给" {
-			roles = supplyRoles
+		if s.Group == "本体供给" || s.Group == "本体建模" {
+			roles = modelerRoles
 		}
 		for _, role := range roles {
 			var ruleCount int64

@@ -107,6 +107,8 @@ func Routers() *gin.Engine {
 		ontologyRouter.InitUnitRouter(PrivateGroup)                         // 本体单位/量纲
 		ontologyRouter.InitAnnotationPropertyRouter(PrivateGroup)           // 本体注释属性注册表
 		ontologyRouter.InitSupplyRouter(PrivateGroup)                       // 本体供给（只读）
+		ontologyRouter.InitModelProjectRouter(PrivateGroup)                 // 本体建模·项目管理
+		ontologyRouter.InitModelPrefixRouter(PrivateGroup)                  // 本体建模·IRI前缀注册
 	}
 
 	//插件路由安装

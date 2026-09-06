@@ -78,6 +78,8 @@ func RegisterTables() {
 		ontology.OntQuantityKind{},
 		ontology.OntUnit{},
 		ontology.OntAnnotationProperty{},
+		ontology.OntModelProject{},
+		ontology.OntModelPrefix{},
 
 		example.ExaFile{},
 		example.ExaCustomer{},

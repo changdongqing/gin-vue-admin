@@ -10,6 +10,8 @@ type RouterGroup struct {
 	UnitRouter
 	AnnotationPropertyRouter
 	SupplyRouter
+	ModelProjectRouter
+	ModelPrefixRouter
 }
 
 var (
@@ -20,4 +22,6 @@ var (
 	quantityKindApi = api.ApiGroupApp.OntologyApiGroup.QuantityKindApi
 	apApi           = api.ApiGroupApp.OntologyApiGroup.AnnotationPropertyApi
 	supplyApi       = api.ApiGroupApp.OntologyApiGroup.SupplyApi
+	mpApi           = api.ApiGroupApp.OntologyApiGroup.ModelProjectApi
+	mpPrefixApi     = api.ApiGroupApp.OntologyApiGroup.ModelPrefixApi
 )

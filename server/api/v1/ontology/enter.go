@@ -12,6 +12,8 @@ type ApiGroup struct {
 	QuantityKindApi
 	AnnotationPropertyApi
 	SupplyApi
+	ModelProjectApi
+	ModelPrefixApi
 }
 
 var (
@@ -21,4 +23,6 @@ var (
 	UnitService               = service.ServiceGroupApp.OntologyServiceGroup.UnitService
 	QuantityKindService       = service.ServiceGroupApp.OntologyServiceGroup.QuantityKindService
 	AnnotationPropertyService = service.ServiceGroupApp.OntologyServiceGroup.AnnotationPropertyService
+	ModelProjectService       = service.ServiceGroupApp.OntologyServiceGroup.ModelProjectService
+	ModelPrefixService        = service.ServiceGroupApp.OntologyServiceGroup.ModelPrefixService
 )

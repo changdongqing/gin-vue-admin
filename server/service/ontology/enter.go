@@ -8,4 +8,6 @@ type ServiceGroup struct {
 	QuantityKindService
 	UnitService
 	AnnotationPropertyService
+	ModelProjectService
+	ModelPrefixService
 }

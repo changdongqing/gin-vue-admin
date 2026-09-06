@@ -70,6 +70,8 @@ func (e *ensureTables) MigrateTable(ctx context.Context) (context.Context, error
 		ontModel.OntQuantityKind{},
 		ontModel.OntUnit{},
 		ontModel.OntAnnotationProperty{},
+		ontModel.OntModelProject{},
+		ontModel.OntModelPrefix{},
 		adapter.CasbinRule{},
 
 		example.ExaFile{},
