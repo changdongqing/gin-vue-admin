@@ -319,7 +319,7 @@ func (s *ExtBindingService) ActivateExtBinding(id uint) error {
 	need(b.NameColumn, "名称")
 	need(b.ParentColumn, "父列")
 	need(b.StatusColumn, "状态")
-	if b.CodeColumn != "" && b.CodeColumn == b.NameColumn && b.CodeColumn != "" {
+	if b.CodeColumn != "" && b.CodeColumn == b.NameColumn {
 		reasons = append(reasons, "编码列与名称列不可为同一列（防唯一索引冲突）")
 	}
 	if (b.StatusColumn == "") != (b.StatusActiveValue == "") {

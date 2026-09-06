@@ -58,9 +58,9 @@ func (OntModelDatatypeProperty) TableName() string {
 // OntModelObjectProperty 本体对象属性（owl:ObjectProperty，domain=所属类）
 type OntModelObjectProperty struct {
 	global.GVA_MODEL
-	ProjectId      uint   `json:"projectId" form:"projectId" gorm:"column:project_id;not null;comment:所属项目ID"`                                     //nolint:stylecheck // 对齐前端 projectId
+	ProjectId      uint   `json:"projectId" form:"projectId" gorm:"column:project_id;not null;comment:所属项目ID"`                  //nolint:stylecheck // 对齐前端 projectId
 	DomainClassId  uint   `json:"domainClassId" form:"domainClassId" gorm:"column:domain_class_id;not null;comment:域类ID(=所属类)"` //nolint:stylecheck // 对齐前端 domainClassId
-	RangeClassId   *uint  `json:"rangeClassId" form:"rangeClassId" gorm:"column:range_class_id;comment:值域类ID(可空)"`                                 //nolint:stylecheck // 对齐前端 rangeClassId
+	RangeClassId   *uint  `json:"rangeClassId" form:"rangeClassId" gorm:"column:range_class_id;comment:值域类ID(可空)"`              //nolint:stylecheck // 对齐前端 rangeClassId
 	PropertyIri    string `json:"propertyIri" form:"propertyIri" gorm:"column:property_iri;size:255;not null;comment:属性IRI"`
 	LocalName      string `json:"localName" form:"localName" gorm:"column:local_name;size:128;not null;comment:本地名(不可改)"`
 	Label          string `json:"label" form:"label" gorm:"column:label;size:128;comment:显示名"`
