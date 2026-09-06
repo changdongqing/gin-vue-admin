@@ -14,6 +14,9 @@ type ApiGroup struct {
 	SupplyApi
 	ModelProjectApi
 	ModelPrefixApi
+	ModelClassApi
+	ModelDatatypePropertyApi
+	ModelObjectPropertyApi
 }
 
 var (
@@ -25,4 +28,8 @@ var (
 	AnnotationPropertyService = service.ServiceGroupApp.OntologyServiceGroup.AnnotationPropertyService
 	ModelProjectService       = service.ServiceGroupApp.OntologyServiceGroup.ModelProjectService
 	ModelPrefixService        = service.ServiceGroupApp.OntologyServiceGroup.ModelPrefixService
+	ModelClassService         = service.ServiceGroupApp.OntologyServiceGroup.ModelClassService
+	ClassInstantiationService = service.ServiceGroupApp.OntologyServiceGroup.ClassInstantiationService
+	DatatypePropertyService   = service.ServiceGroupApp.OntologyServiceGroup.DatatypePropertyService
+	ObjectPropertyService     = service.ServiceGroupApp.OntologyServiceGroup.ObjectPropertyService
 )

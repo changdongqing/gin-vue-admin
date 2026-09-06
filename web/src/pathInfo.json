@@ -99,5 +99,10 @@
   "/src/plugin/auto/view/pubPlug/pubPlug.vue": "PubPlug",
   "/src/plugin/auto/view/skills/index.vue": "Index",
   "/src/plugin/email/view/index.vue": "Email",
-  "/src/view/ontology/model/project/project.vue": "OntModelProject"
+  "/src/view/ontology/model/project/project.vue": "OntModelProject",
+  "/src/view/ontology/model/class/class.vue": "OntModelClass",
+  "/src/view/ontology/model/class/components/classDetail.vue": "ClassDetail",
+  "/src/view/ontology/model/class/components/instantiateModal.vue": "InstantiateModal",
+  "/src/view/ontology/model/class/components/propertyTemplateSelect.vue": "PropertyTemplateSelect",
+  "/src/view/ontology/model/class/components/propertyForm.vue": "PropertyForm"
 }

@@ -109,6 +109,9 @@ func Routers() *gin.Engine {
 		ontologyRouter.InitSupplyRouter(PrivateGroup)                       // 本体供给（只读）
 		ontologyRouter.InitModelProjectRouter(PrivateGroup)                 // 本体建模·项目管理
 		ontologyRouter.InitModelPrefixRouter(PrivateGroup)                  // 本体建模·IRI前缀注册
+		ontologyRouter.InitModelClassRouter(PrivateGroup)                   // 本体建模·类建模
+		ontologyRouter.InitModelDatatypePropertyRouter(PrivateGroup)        // 本体建模·数据属性
+		ontologyRouter.InitModelObjectPropertyRouter(PrivateGroup)          // 本体建模·对象属性
 	}
 
 	//插件路由安装

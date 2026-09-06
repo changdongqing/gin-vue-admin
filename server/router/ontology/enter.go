@@ -12,6 +12,9 @@ type RouterGroup struct {
 	SupplyRouter
 	ModelProjectRouter
 	ModelPrefixRouter
+	ModelClassRouter
+	ModelDatatypePropertyRouter
+	ModelObjectPropertyRouter
 }
 
 var (
@@ -24,4 +27,7 @@ var (
 	supplyApi       = api.ApiGroupApp.OntologyApiGroup.SupplyApi
 	mpApi           = api.ApiGroupApp.OntologyApiGroup.ModelProjectApi
 	mpPrefixApi     = api.ApiGroupApp.OntologyApiGroup.ModelPrefixApi
+	mcApi           = api.ApiGroupApp.OntologyApiGroup.ModelClassApi
+	mdpApi          = api.ApiGroupApp.OntologyApiGroup.ModelDatatypePropertyApi
+	mopApi          = api.ApiGroupApp.OntologyApiGroup.ModelObjectPropertyApi
 )

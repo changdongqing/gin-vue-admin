@@ -10,4 +10,8 @@ type ServiceGroup struct {
 	AnnotationPropertyService
 	ModelProjectService
 	ModelPrefixService
+	ModelClassService
+	ClassInstantiationService
+	DatatypePropertyService
+	ObjectPropertyService
 }

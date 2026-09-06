@@ -80,6 +80,10 @@ func RegisterTables() {
 		ontology.OntAnnotationProperty{},
 		ontology.OntModelProject{},
 		ontology.OntModelPrefix{},
+		ontology.OntModelClass{},
+		ontology.OntModelDatatypeProperty{},
+		ontology.OntModelObjectProperty{},
+		ontology.OntModelSubclassOf{},
 
 		example.ExaFile{},
 		example.ExaCustomer{},

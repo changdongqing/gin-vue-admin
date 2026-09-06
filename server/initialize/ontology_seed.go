@@ -147,6 +147,7 @@ func seedOntologyModelMenus() {
 	}
 	leaves := []leafSeed{
 		{Name: "modelProject", Path: "project", Title: "本体项目管理", Icon: "folder-opened", Component: "view/ontology/model/project/project.vue", Sort: 1},
+		{Name: "modelClass", Path: "class", Title: "本体类建模", Icon: "connection", Component: "view/ontology/model/class/class.vue", Sort: 2},
 	}
 	for _, s := range leaves {
 		var count int64
@@ -255,6 +256,29 @@ func seedOntologyApis() {
 		{"/ontology/modelPrefix/createModelPrefix", "POST", "本体建模", "新增项目IRI前缀"},
 		{"/ontology/modelPrefix/updateModelPrefix", "PUT", "本体建模", "更新项目IRI前缀"},
 		{"/ontology/modelPrefix/deleteModelPrefix", "DELETE", "本体建模", "删除项目IRI前缀"},
+		{"/ontology/modelClass/createModelClass", "POST", "本体建模", "创建本体类"},
+		{"/ontology/modelClass/updateModelClass", "PUT", "本体建模", "更新本体类"},
+		{"/ontology/modelClass/deleteModelClass", "DELETE", "本体建模", "删除本体类"},
+		{"/ontology/modelClass/findModelClass", "GET", "本体建模", "查询本体类详情"},
+		{"/ontology/modelClass/getModelClassDetail", "GET", "本体建模", "类详情聚合"},
+		{"/ontology/modelClass/getModelClassList", "GET", "本体建模", "分页查询本体类"},
+		{"/ontology/modelClass/getModelClassByProject", "GET", "本体建模", "项目内全量类"},
+		{"/ontology/modelClass/checkModelClassLocalName", "GET", "本体建模", "类本地名查重"},
+		{"/ontology/modelClass/instantiateModelClass", "POST", "本体建模", "分类模板实例化"},
+		{"/ontology/modelClass/previewInstantiateModelClass", "GET", "本体建模", "实例化预览"},
+		{"/ontology/modelDatatypeProperty/createModelDatatypeProperty", "POST", "本体建模", "创建数据属性"},
+		{"/ontology/modelDatatypeProperty/updateModelDatatypeProperty", "PUT", "本体建模", "更新数据属性"},
+		{"/ontology/modelDatatypeProperty/deleteModelDatatypeProperty", "DELETE", "本体建模", "删除数据属性"},
+		{"/ontology/modelDatatypeProperty/findModelDatatypeProperty", "GET", "本体建模", "查询数据属性详情"},
+		{"/ontology/modelDatatypeProperty/getModelDatatypePropertyList", "GET", "本体建模", "分页查询数据属性"},
+		{"/ontology/modelDatatypeProperty/instantiateModelDatatypeProperty", "POST", "本体建模", "数据属性模板挂载"},
+		{"/ontology/modelObjectProperty/createModelObjectProperty", "POST", "本体建模", "创建对象属性"},
+		{"/ontology/modelObjectProperty/updateModelObjectProperty", "PUT", "本体建模", "更新对象属性"},
+		{"/ontology/modelObjectProperty/deleteModelObjectProperty", "DELETE", "本体建模", "删除对象属性"},
+		{"/ontology/modelObjectProperty/findModelObjectProperty", "GET", "本体建模", "查询对象属性详情"},
+		{"/ontology/modelObjectProperty/getModelObjectPropertyList", "GET", "本体建模", "分页查询对象属性"},
+		{"/ontology/modelObjectProperty/suggestInverseModelObjectProperty", "GET", "本体建模", "反向关系建议"},
+		{"/ontology/modelObjectProperty/instantiateModelObjectProperty", "POST", "本体建模", "对象属性模板挂载"},
 	}
 	// 治理 CRUD 授 888；供给/建模接口额外授予「建模师」角色（若存在）
 	governanceRoles := []string{"888"}
