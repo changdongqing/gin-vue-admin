@@ -20,7 +20,9 @@ export default ({ mode }) => {
 
   const alias = {
     '@': path.resolve(import.meta.dirname, './src'),
-    vue$: 'vue/dist/vue.runtime.esm-bundler.js'
+    vue$: 'vue/dist/vue.runtime.esm-bundler.js',
+    // @antv/g2 为 S2 可选 peer：本地桩替代（分析报表不使用 g2，省约 1MB 依赖）
+    '@antv/g2': path.resolve(import.meta.dirname, './src/utils/antvG2Stub.js')
   }
 
   const base = '/'
