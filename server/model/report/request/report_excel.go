@@ -37,3 +37,11 @@ type BindDataSetsReq struct {
 	ReportCode string   `json:"reportCode" binding:"required"`
 	SetCodes   []string `json:"setCodes"`
 }
+
+// PreviewExcelReportReq 预览请求（paramValues 平铺；dateRange 为 "起,止" 字符串，后端拆分）
+type PreviewExcelReportReq struct {
+	ReportCode  string                 `json:"reportCode" binding:"required"`
+	ParamValues map[string]interface{} `json:"paramValues"`
+	PageNo      int                    `json:"pageNo"`   // 默认 1
+	PageSize    int                    `json:"pageSize"` // 默认 20
+}

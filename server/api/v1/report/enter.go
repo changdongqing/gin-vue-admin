@@ -15,6 +15,7 @@ var (
 	DataSourceService  = service.ServiceGroupApp.ReportServiceGroup.DataSourceService
 	DataSetService     = service.ServiceGroupApp.ReportServiceGroup.DataSetService
 	ExcelReportService = service.ServiceGroupApp.ReportServiceGroup.ExcelReportService
-	// QueryServiceApp 数据集查询执行服务（04 渲染引擎复用同一实例）
-	QueryServiceApp = &report.DataSetQueryService{}
+	// QueryServiceApp / RenderServiceApp 查询执行与渲染引擎（04 预览复用）
+	QueryServiceApp  = &report.DataSetQueryService{}
+	RenderServiceApp = &report.ExcelReportRenderService{}
 )

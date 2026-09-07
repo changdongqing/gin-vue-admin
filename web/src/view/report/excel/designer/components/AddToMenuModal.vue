@@ -115,7 +115,36 @@
           }
         })
         if (res.code === 0) {
-          ElMessage.success('菜单已创建，重新登录或刷新后可在侧边栏查看')
+          // 授权给当前角色（GVA addMenuAuthority 为全量替换语义：先取现有列表再追加，避免覆盖丢失）
+          let authorized = false
+          try {
+            const authorityId = userStore.userInfo?.authority?.authorityId || userStore.userInfo?.authorityId
+            if (authorityId) {
+              const listRes = await getMenuList()
+              const authRes = await getMenuAuthority({ authorityId })
+              if (listRes.code === 0 && authRes.code === 0) {
+                const findMenu = (nodes) => {
+                  for (const n of nodes || []) {
+                    if (n.name === `reportPreview${props.reportCode}`) return n
+                    const r = findMenu(n.children)
+                    if (r) return r
+                  }
+                  return null
+                }
+                const created = findMenu(listRes.data || [])
+                // getMenuAuthority 返回 { menus: [...] }（全量替换语义：取现有列表追加新菜单回写）
+                const menus = authRes.data?.menus || authRes.data || []
+                if (created && Array.isArray(menus) && !menus.some((m) => m.ID === created.ID)) {
+                  menus.push(created)
+                }
+                const saveRes = await addMenuAuthority({ menus, authorityId })
+                authorized = saveRes.code === 0
+              }
+            }
+          } catch (e) {
+            /* 授权失败降级提示，不影响菜单创建结果 */
+          }
+          ElMessage.success(authorized ? '菜单已创建并授权，刷新页面后可在侧边栏查看' : '菜单已创建，请在「角色管理-菜单权限」中授权后查看')
           visible.value = false
         }
       } finally {

@@ -20,6 +20,9 @@ import (
 // DataSetQueryService 数据集查询执行服务（SQL 多库执行 + HTTP 取数 + 转换链 + 行数上限 + 服务端分页）
 type DataSetQueryService struct{}
 
+// QueryServiceApp 领域内单例（04 渲染引擎复用）
+var QueryServiceApp = &DataSetQueryService{}
+
 // QueryResult 查询结果（Go 无序 map：列序显式携带，渲染引擎/预览表头依赖）
 type QueryResult struct {
 	Columns []string                 `json:"columns"`

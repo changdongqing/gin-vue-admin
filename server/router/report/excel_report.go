@@ -25,5 +25,7 @@ func (r *ExcelReportRouter) InitExcelReportRouter(Router *gin.RouterGroup) {
 		read.GET("findExcelReport", excelApi.FindExcelReport)                         // 详情（含模板）
 		read.GET("getExcelReportAll", excelApi.GetExcelReportAll)                     // 全量下拉（预留）
 		read.GET("getExcelReportDataSetFields", excelApi.GetExcelReportDataSetFields) // 设计器左栏字段列表
+		read.GET("getExcelReportParamDefs", excelApi.GetExcelReportParamDefs)         // 关联数据集参数定义聚合
+		read.POST("previewExcelReport", excelApi.PreviewExcelReport)                  // 分页渲染（查询性质，不记操作日志）
 	}
 }

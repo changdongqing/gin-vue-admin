@@ -245,3 +245,50 @@ func (api *ExcelReportApi) GetExcelReportDataSetFields(c *gin.Context) {
 	}
 	response.OkWithData(fields, c)
 }
+
+// PreviewExcelReport 分页渲染预览
+// @Tags      报表平台
+// @Summary   Excel 报表预览渲染（主数据集服务端分页；snapshot 为渲染后快照对象）
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data body repReq.PreviewExcelReportReq true "预览请求（paramValues 平铺）"
+// @Success   200 {object} response.Response{data=object,msg=string}
+// @Router    /report/excelReport/previewExcelReport [post]
+func (api *ExcelReportApi) PreviewExcelReport(c *gin.Context) {
+	var req repReq.PreviewExcelReportReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	result, err := RenderServiceApp.Render(req.ReportCode, req.ParamValues, req.PageNo, req.PageSize)
+	if err != nil {
+		global.GVA_LOG.Error("预览失败!", zap.Error(err))
+		response.FailWithMessage("预览失败:"+err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(gin.H{"snapshot": result.Snapshot, "total": result.Total}, "获取成功", c)
+}
+
+// GetExcelReportParamDefs 关联数据集参数定义聚合
+// @Tags      报表平台
+// @Summary   报表关联的全部数据集参数平铺返回（跨数据集按参数名去重，同名保留先出现者）
+// @Security  ApiKeyAuth
+// @Produce   application/json
+// @Param     reportCode query string true "报表编码"
+// @Success   200 {object} response.Response{data=[]report.ReportParamDef,msg=string}
+// @Router    /report/excelReport/getExcelReportParamDefs [get]
+func (api *ExcelReportApi) GetExcelReportParamDefs(c *gin.Context) {
+	reportCode := c.Query("reportCode")
+	if reportCode == "" {
+		response.FailWithMessage("reportCode 不能为空", c)
+		return
+	}
+	defs, err := RenderServiceApp.GetParamDefs(reportCode)
+	if err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败:"+err.Error(), c)
+		return
+	}
+	response.OkWithData(defs, c)
+}

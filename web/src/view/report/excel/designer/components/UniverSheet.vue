@@ -65,20 +65,25 @@
     views: [{}]
   })
 
+  // 选区解析（0.25.x 实测 API：FWorksheet.getActiveRange() → FRange.getRow()/getColumn()/getValue()）
   const emitSelection = (workbook) => {
     try {
       const sheet = workbook.getActiveSheet()
       if (!sheet) return
-      const sel = sheet.getSelection()?.getCurrent()
-      if (!sel) return
-      const row = sel.actualRow ?? sel.row
-      const col = sel.actualColumn ?? sel.column
-      const cell = sheet.getCell(row, col)
+      let range = null
+      if (typeof sheet.getActiveRange === 'function') {
+        range = sheet.getActiveRange()
+      } else if (typeof sheet.getSelection === 'function') {
+        range = sheet.getSelection()?.getActiveRange?.() || null
+      }
+      if (!range || typeof range.getRow !== 'function') return
+      const row = range.getRow()
+      const col = range.getColumn()
       emit('cell-select', {
-        sheetName: sheet.getName(),
+        sheetName: typeof sheet.getSheetName === 'function' ? sheet.getSheetName() : '',
         row,
         col,
-        value: cell?.getValue?.() ?? ''
+        value: range.getValue?.() ?? ''
       })
     } catch (e) {
       /* 选区解析失败忽略 */
@@ -121,10 +126,15 @@
     // 选区监听：小写 selection 系列命令（SetSelections/MoveSelection/SelectAll…）
     selectionDisposable = univerAPI.onCommandExecuted((command) => {
       const id = (command?.id || '').toLowerCase()
-      if (id.includes('selection')) {
+      // 选区变化以命令派发（0.25.x 命令 id 命名不稳定：selection 系/pointer 系都监听）
+      if (id.includes('selection') || id.includes('pointer')) {
         emitSelection(workbook)
       }
     })
+    // 初始选区外的兜底：暴露给调试/父组件读取（生产无副作用）
+    if (typeof window !== 'undefined') {
+      window.__univerWorkbook = workbook
+    }
     emitSelection(workbook)
   })
 
@@ -163,13 +173,17 @@
     const wb = workbookInstance.value
     if (!wb) return null
     const sheet = wb.getActiveSheet()
-    const sel = sheet.getSelection()?.getCurrent()
-    if (!sel) return null
+    // 0.25.x：getActiveRange() → FRange.getRow()/getColumn()
+    const range =
+      (typeof sheet.getActiveRange === 'function' ? sheet.getActiveRange() : null) ||
+      sheet.getSelection?.()?.getActiveRange?.() ||
+      null
+    if (!range || typeof range.getRow !== 'function') return null
     return {
       sheetId: sheet.getSheetId(),
-      sheetName: sheet.getName(),
-      row: sel.actualRow ?? sel.row ?? 0,
-      col: sel.actualColumn ?? sel.column ?? 0
+      sheetName: typeof sheet.getSheetName === 'function' ? sheet.getSheetName() : '',
+      row: range.getRow() ?? 0,
+      col: range.getColumn() ?? 0
     }
   }
 

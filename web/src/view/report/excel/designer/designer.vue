@@ -180,7 +180,9 @@
 
 <style lang="scss" scoped>
   .excel-designer {
-    height: 100%;
+    // GVA 布局仅提供 min-height，百分比链不成立：直接用视口高度（header+页签+工具栏预留）
+    height: calc(100vh - 268px);
+    min-height: 520px;
     display: flex;
     flex-direction: column;
     overflow: hidden;

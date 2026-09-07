@@ -26,20 +26,20 @@ func (ReportDataSet) TableName() string {
 // ReportDataSetParam 数据集参数子表（set_code 逻辑关联）
 type ReportDataSetParam struct {
 	global.GVA_MODEL
-	SetCode        string `json:"setCode" form:"setCode" gorm:"column:set_code;size:50;not null;comment:所属数据集编码"`
-	ParamName      string `json:"paramName" form:"paramName" gorm:"column:param_name;size:50;not null;comment:参数名" binding:"required"`
-	ParamDesc      string `json:"paramDesc" form:"paramDesc" gorm:"column:param_desc;size:100;comment:参数描述"`
-	ParamType      string `json:"paramType" form:"paramType" gorm:"column:param_type;size:20;not null;default:string;comment:参数类型"`
-	SampleItem     string `json:"sampleItem" form:"sampleItem" gorm:"column:sample_item;size:1080;comment:示例值"`
-	DefaultValue   string `json:"defaultValue" form:"defaultValue" gorm:"column:default_value;size:1080;comment:默认值(直接值或表达式)"`
-	DictType       string `json:"dictType" form:"dictType" gorm:"column:dict_type;size:100;comment:字典类型(预留)"`
-	CustomOptions  string `json:"customOptions" form:"customOptions" gorm:"column:custom_options;size:2048;comment:自定义选项JSON(预留)"`
-	DateFormat     string `json:"dateFormat" form:"dateFormat" gorm:"column:date_format;size:50;comment:日期格式(预留)"`
-	RequiredFlag   bool   `json:"requiredFlag" form:"requiredFlag" gorm:"column:required_flag;not null;default:false;comment:是否必填"`
+	SetCode         string `json:"setCode" form:"setCode" gorm:"column:set_code;size:50;not null;comment:所属数据集编码"`
+	ParamName       string `json:"paramName" form:"paramName" gorm:"column:param_name;size:50;not null;comment:参数名" binding:"required"`
+	ParamDesc       string `json:"paramDesc" form:"paramDesc" gorm:"column:param_desc;size:100;comment:参数描述"`
+	ParamType       string `json:"paramType" form:"paramType" gorm:"column:param_type;size:20;not null;default:string;comment:参数类型"`
+	SampleItem      string `json:"sampleItem" form:"sampleItem" gorm:"column:sample_item;size:1080;comment:示例值"`
+	DefaultValue    string `json:"defaultValue" form:"defaultValue" gorm:"column:default_value;size:1080;comment:默认值(直接值或表达式)"`
+	DictType        string `json:"dictType" form:"dictType" gorm:"column:dict_type;size:100;comment:字典类型(预留)"`
+	CustomOptions   string `json:"customOptions" form:"customOptions" gorm:"column:custom_options;size:2048;comment:自定义选项JSON(预留)"`
+	DateFormat      string `json:"dateFormat" form:"dateFormat" gorm:"column:date_format;size:50;comment:日期格式(预留)"`
+	RequiredFlag    bool   `json:"requiredFlag" form:"requiredFlag" gorm:"column:required_flag;not null;default:false;comment:是否必填"`
 	ValidationRules string `json:"validationRules" form:"validationRules" gorm:"column:validation_rules;size:2048;comment:JS校验规则(预留)"`
-	OrderNum       int    `json:"orderNum" form:"orderNum" gorm:"column:order_num;not null;default:0;comment:排序"`
-	CreatedBy      string `json:"createdBy" gorm:"column:created_by;size:64;comment:创建人"`
-	UpdatedBy      string `json:"updatedBy" gorm:"column:updated_by;size:64;comment:更新人"`
+	OrderNum        int    `json:"orderNum" form:"orderNum" gorm:"column:order_num;not null;default:0;comment:排序"`
+	CreatedBy       string `json:"createdBy" gorm:"column:created_by;size:64;comment:创建人"`
+	UpdatedBy       string `json:"updatedBy" gorm:"column:updated_by;size:64;comment:更新人"`
 }
 
 func (ReportDataSetParam) TableName() string {

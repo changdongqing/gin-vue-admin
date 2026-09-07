@@ -59,7 +59,34 @@ func seedReportMenus() {
 		{Name: "dataSource", Title: "数据源管理", Icon: "coin", Component: "view/report/dataSource/dataSource.vue", Sort: 1},
 		{Name: "dataSet", Title: "数据集管理", Icon: "tickets", Component: "view/report/dataSet/dataSet.vue", Sort: 2},
 		{Name: "excelReport", Title: "Excel报表", Icon: "document", Component: "view/report/excel/excelReport.vue", Sort: 3},
-		// 后续：analysisReport(sort=4,icon=data-line)；预览 hidden 菜单归 04
+		// 后续：analysisReport(sort=4,icon=data-line)
+	}
+	// hidden 菜单：Excel 报表预览页（「添加到菜单」的目标路由；Hidden 仍注册路由）
+	hiddenSeeds := []menuSeed{
+		{Name: "reportExcelViewer", Title: "报表预览", Icon: "view", Component: "view/report/excel/preview/preview.vue", Sort: 90},
+	}
+	for _, h := range hiddenSeeds {
+		var count int64
+		db.Model(&system.SysBaseMenu{}).Where("parent_id = ? AND name = ?", dir.ID, h.Name).Count(&count)
+		if count > 0 {
+			continue
+		}
+		menu := system.SysBaseMenu{
+			ParentId:  dir.ID,
+			Path:      "reportpreview",
+			Name:      h.Name,
+			Hidden:    true,
+			Component: h.Component,
+			Sort:      h.Sort,
+			Meta: system.Meta{
+				Title:     h.Title,
+				Icon:      h.Icon,
+				KeepAlive: false,
+			},
+		}
+		if err := db.Create(&menu).Error; err != nil {
+			global.GVA_LOG.Error("报表种子：hidden菜单创建失败", zap.String("name", h.Name), zap.Error(err))
+		}
 	}
 	for _, s := range seeds {
 		var count int64
@@ -137,6 +164,8 @@ func seedReportApis() {
 		{"/report/excelReport/copyExcelReport", "POST", "报表平台", "复制Excel报表"},
 		{"/report/excelReport/saveExcelTemplate", "POST", "报表平台", "保存Excel报表模板"},
 		{"/report/excelReport/bindExcelReportDataSets", "POST", "报表平台", "Excel报表关联数据集"},
+		{"/report/excelReport/previewExcelReport", "POST", "报表平台", "Excel报表预览渲染"},
+		{"/report/excelReport/getExcelReportParamDefs", "GET", "报表平台", "Excel报表参数定义聚合"},
 	}
 	addedRules := make([][]string, 0)
 	for _, s := range seeds {
