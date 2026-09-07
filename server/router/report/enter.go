@@ -8,10 +8,12 @@ type RouterGroup struct {
 	DataSourceRouter
 	DataSetRouter
 	ExcelReportRouter
+	AnalysisReportRouter
 }
 
 var (
-	dsApi      = api.ApiGroupApp.ReportApiGroup.DataSourceApi
-	dataSetApi = api.ApiGroupApp.ReportApiGroup.DataSetApi
-	excelApi   = api.ApiGroupApp.ReportApiGroup.ExcelReportApi
+	dsApi       = api.ApiGroupApp.ReportApiGroup.DataSourceApi
+	dataSetApi  = api.ApiGroupApp.ReportApiGroup.DataSetApi
+	excelApi    = api.ApiGroupApp.ReportApiGroup.ExcelReportApi
+	analysisApi = api.ApiGroupApp.ReportApiGroup.AnalysisReportApi
 )

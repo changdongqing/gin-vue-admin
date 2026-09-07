@@ -120,6 +120,7 @@ func Routers() *gin.Engine {
 		reportRouter.InitDataSourceRouter(PrivateGroup)                     // 报表平台·数据源管理
 		reportRouter.InitDataSetRouter(PrivateGroup)                        // 报表平台·数据集管理
 		reportRouter.InitExcelReportRouter(PrivateGroup)                    // 报表平台·Excel报表
+		reportRouter.InitAnalysisReportRouter(PrivateGroup)                 // 报表平台·分析报表
 	}
 
 	//插件路由安装

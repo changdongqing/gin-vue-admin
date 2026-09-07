@@ -52,18 +52,19 @@ func seedReportMenus() {
 		}
 	}
 	type menuSeed struct {
-		Name, Title, Icon, Component string
-		Sort                         int
+		Name, Path, Title, Icon, Component string
+		Sort                               int
 	}
 	seeds := []menuSeed{
-		{Name: "dataSource", Title: "数据源管理", Icon: "coin", Component: "view/report/dataSource/dataSource.vue", Sort: 1},
-		{Name: "dataSet", Title: "数据集管理", Icon: "tickets", Component: "view/report/dataSet/dataSet.vue", Sort: 2},
-		{Name: "excelReport", Title: "Excel报表", Icon: "document", Component: "view/report/excel/excelReport.vue", Sort: 3},
-		// 后续：analysisReport(sort=4,icon=data-line)
+		{Name: "dataSource", Path: "dataSource", Title: "数据源管理", Icon: "coin", Component: "view/report/dataSource/dataSource.vue", Sort: 1},
+		{Name: "dataSet", Path: "dataSet", Title: "数据集管理", Icon: "tickets", Component: "view/report/dataSet/dataSet.vue", Sort: 2},
+		{Name: "excelReport", Path: "excelReport", Title: "Excel报表", Icon: "document", Component: "view/report/excel/excelReport.vue", Sort: 3},
+		{Name: "analysisReport", Path: "analysisReport", Title: "分析报表", Icon: "data-line", Component: "view/report/analysis/analysisReport.vue", Sort: 4},
 	}
 	// hidden 菜单：Excel 报表预览页（「添加到菜单」的目标路由；Hidden 仍注册路由）
 	hiddenSeeds := []menuSeed{
-		{Name: "reportExcelViewer", Title: "报表预览", Icon: "view", Component: "view/report/excel/preview/preview.vue", Sort: 90},
+		{Name: "reportExcelViewer", Path: "reportpreview", Title: "报表预览", Icon: "view", Component: "view/report/excel/preview/preview.vue", Sort: 90},
+		{Name: "reportAnalysisPreview", Path: "preview", Title: "分析预览", Icon: "view", Component: "view/report/analysis/preview/preview.vue", Sort: 91},
 	}
 	for _, h := range hiddenSeeds {
 		var count int64
@@ -73,7 +74,7 @@ func seedReportMenus() {
 		}
 		menu := system.SysBaseMenu{
 			ParentId:  dir.ID,
-			Path:      "reportpreview",
+			Path:      h.Path,
 			Name:      h.Name,
 			Hidden:    true,
 			Component: h.Component,
@@ -166,6 +167,15 @@ func seedReportApis() {
 		{"/report/excelReport/bindExcelReportDataSets", "POST", "报表平台", "Excel报表关联数据集"},
 		{"/report/excelReport/previewExcelReport", "POST", "报表平台", "Excel报表预览渲染"},
 		{"/report/excelReport/getExcelReportParamDefs", "GET", "报表平台", "Excel报表参数定义聚合"},
+		{"/report/analysisReport/getAnalysisReportList", "GET", "报表平台", "分页查询分析报表"},
+		{"/report/analysisReport/findAnalysisReport", "GET", "报表平台", "查询分析报表详情"},
+		{"/report/analysisReport/getAnalysisReportByCode", "GET", "报表平台", "按编码查询分析报表"},
+		{"/report/analysisReport/createAnalysisReport", "POST", "报表平台", "创建分析报表"},
+		{"/report/analysisReport/updateAnalysisReport", "PUT", "报表平台", "更新分析报表"},
+		{"/report/analysisReport/deleteAnalysisReport", "DELETE", "报表平台", "删除分析报表"},
+		{"/report/analysisReport/copyAnalysisReport", "POST", "报表平台", "复制分析报表"},
+		{"/report/analysisReport/saveAnalysisConfig", "POST", "报表平台", "保存分析报表配置"},
+		{"/report/analysisReport/previewAnalysisReport", "POST", "报表平台", "分析报表预览取数"},
 	}
 	addedRules := make([][]string, 0)
 	for _, s := range seeds {

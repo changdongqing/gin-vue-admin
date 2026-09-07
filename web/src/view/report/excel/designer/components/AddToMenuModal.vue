@@ -17,7 +17,7 @@
         <el-input v-model="form.title" placeholder="默认为报表名" />
       </el-form-item>
       <el-form-item label="路由路径" prop="path">
-        <el-input v-model="form.path" placeholder="reportpreview">
+        <el-input v-model="form.path" :placeholder="previewPath">
           <template #append>?reportCode={{ reportCode }}</template>
         </el-input>
       </el-form-item>
@@ -42,7 +42,9 @@
 
   const props = defineProps({
     reportCode: { type: String, required: true },
-    reportName: { type: String, default: '' }
+    reportName: { type: String, default: '' },
+    previewComponent: { type: String, default: 'view/report/excel/preview/preview.vue' },
+    previewPath: { type: String, default: 'reportpreview' }
   })
 
   const visible = ref(false)
@@ -97,7 +99,7 @@
         ElMessage.error('同级菜单下已存在同名菜单，请更换名称')
         return
       }
-      const rawPath = `${form.value.path || 'reportpreview'}?reportCode=${props.reportCode}`
+      const rawPath = `${form.value.path || props.previewPath}?reportCode=${props.reportCode}`
       const path = parent === 0 ? `/${rawPath}` : rawPath
       submitting.value = true
       try {
@@ -106,7 +108,7 @@
           Path: path,
           Name: `reportPreview${props.reportCode}`,
           Hidden: false,
-          Component: 'view/report/excel/preview/preview.vue',
+          Component: props.previewComponent,
           Sort: form.value.sort,
           Meta: {
             Title: form.value.title,
