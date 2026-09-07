@@ -157,9 +157,15 @@ func (s *DataSourceService) checkCodeUnique(db *gorm.DB, sourceCode string, excl
 	return nil
 }
 
-// validateNotReferenced 删除引用校验埋点：被 report_data_sets.source_code 引用时拒绝删除
-// （02 落地真实计数查询，本期返回 nil 占位）
+// validateNotReferenced 删除引用校验：被 report_data_sets.source_code 引用时拒绝删除（02 落地）
 func (s *DataSourceService) validateNotReferenced(sourceCode string) error {
-	_ = sourceCode
+	var count int64
+	if err := global.GVA_DB.Model(&report.ReportDataSet{}).
+		Where("source_code = ?", sourceCode).Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return ErrSourceReferenced
+	}
 	return nil
 }

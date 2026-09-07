@@ -87,6 +87,9 @@ func (e *ensureTables) MigrateTable(ctx context.Context) (context.Context, error
 		ontModel.OntObjectAttrValue{},
 		ontModel.OntObjectRelation{},
 		repModel.ReportDataSource{},
+		repModel.ReportDataSet{},
+		repModel.ReportDataSetParam{},
+		repModel.ReportDataSetTransform{},
 		adapter.CasbinRule{},
 
 		example.ExaFile{},

@@ -11,7 +11,8 @@ import (
 
 	// 按 sourceType 注册 database/sql 驱动（开箱三类，信创/Oracle 按需启用，见 driverRegistry）
 	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/microsoft/go-mssqldb"
 )
 
@@ -77,7 +78,7 @@ func (m *DataSourcePoolManager) GetOrCreate(sourceCode, sourceType, sourceConfig
 	if err != nil {
 		return nil, err
 	}
-	db, err := sql.Open(spec.driverName, dsn)
+	db, err := openPooledDb(sourceType, spec.driverName, dsn)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrSourceConnFailed, err)
 	}
@@ -95,6 +96,20 @@ func (m *DataSourcePoolManager) GetOrCreate(sourceCode, sourceType, sourceConfig
 		_ = db.Close()
 	}
 	return actual.(*sql.DB), nil
+}
+
+// openPooledDb 建池入口。pgx 走 simple protocol：参数由驱动端转义后内联，
+// 规避服务端对多态函数（CONCAT 等）参数类型推断失败（42P18），语义等价预编译且防注入
+func openPooledDb(sourceType, driverName, dsn string) (*sql.DB, error) {
+	if sourceType == "postgresql" {
+		pgCfg, err := pgx.ParseConfig(dsn)
+		if err != nil {
+			return nil, err
+		}
+		pgCfg.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+		return stdlib.OpenDB(*pgCfg), nil
+	}
+	return sql.Open(driverName, dsn)
 }
 
 // TestConnection 测试连接（临时连接执行验证 SQL，不写入池缓存；调用方无需 Close）

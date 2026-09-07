@@ -57,7 +57,8 @@ func seedReportMenus() {
 	}
 	seeds := []menuSeed{
 		{Name: "dataSource", Title: "数据源管理", Icon: "coin", Component: "view/report/dataSource/dataSource.vue", Sort: 1},
-		// 后续：dataSet(sort=2,icon=tickets) / excelReport(sort=3,icon=document) / analysisReport(sort=4,icon=data-line)
+		{Name: "dataSet", Title: "数据集管理", Icon: "tickets", Component: "view/report/dataSet/dataSet.vue", Sort: 2},
+		// 后续：excelReport(sort=3,icon=document) / analysisReport(sort=4,icon=data-line)
 	}
 	for _, s := range seeds {
 		var count int64
@@ -118,6 +119,13 @@ func seedReportApis() {
 		{"/report/dataSource/updateDataSource", "PUT", "报表平台", "更新数据源"},
 		{"/report/dataSource/deleteDataSource", "DELETE", "报表平台", "删除数据源"},
 		{"/report/dataSource/testDataSourceConnection", "POST", "报表平台", "测试数据源连接"},
+		{"/report/dataSet/getDataSetList", "GET", "报表平台", "分页查询数据集"},
+		{"/report/dataSet/findDataSet", "GET", "报表平台", "查询数据集详情"},
+		{"/report/dataSet/getDataSetAll", "GET", "报表平台", "已启用数据集全量下拉"},
+		{"/report/dataSet/createDataSet", "POST", "报表平台", "创建数据集"},
+		{"/report/dataSet/updateDataSet", "PUT", "报表平台", "更新数据集"},
+		{"/report/dataSet/deleteDataSet", "DELETE", "报表平台", "删除数据集"},
+		{"/report/dataSet/testDataSetPreview", "POST", "报表平台", "数据集测试预览"},
 	}
 	addedRules := make([][]string, 0)
 	for _, s := range seeds {
