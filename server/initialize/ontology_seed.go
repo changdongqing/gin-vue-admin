@@ -10,7 +10,7 @@ import (
 )
 
 // SeedOntology 本体治理幂等种子（菜单/API/casbin；字典随迁移 SQL 种入，不做 Go 双写）
-// 1. 菜单：顶级目录「本体治理」+ 子菜单「属性模板库」（02/03/04 陆续追加子菜单）
+// 1. 菜单：顶级目录「本体」+ 子目录「本体治理」+ 四个治理叶子（旧结构叶子直挂顶级目录时自动迁移）
 // 2. 角色菜单：888（admin）关联新菜单
 // 3. API：登记治理 CRUD 与供给接口（供给独立「本体供给」组）
 // 4. casbin：为 888 插入 p 规则；供给规则同时授予「建模师」角色（若存在）并热加载
@@ -23,7 +23,9 @@ func SeedOntology() {
 	seedOntologyApis()
 }
 
-// seedOntologyMenus 追加本体治理目录与子菜单并授权给 888
+// seedOntologyMenus 追加本体治理子目录与叶子菜单并授权给 888
+// 结构：本体(ontology) → 本体治理(governance) → 四个治理叶子；
+// 旧结构（治理叶子直挂顶级目录）自动迁移到子目录，保留菜单 id 与既有角色授权
 func seedOntologyMenus() {
 	db := global.GVA_DB
 	// 顶级目录（幂等）
@@ -37,13 +39,41 @@ func seedOntologyMenus() {
 			Component: "view/routerHolder.vue",
 			Sort:      20,
 			Meta: system.Meta{
-				Title:     "本体治理",
+				Title:     "本体",
 				Icon:      "share",
 				KeepAlive: false,
 			},
 		}
 		if err := db.Create(&dir).Error; err != nil {
 			global.GVA_LOG.Error("本体种子：目录菜单创建失败", zap.Error(err))
+			return
+		}
+	}
+	// 子目录 governance（幂等；运维手建的「本体治理」目录按标题识别并归一化 name/path/sort/icon，避免重复建目录）
+	var govDir system.SysBaseMenu
+	if err := db.Where("name = ? AND parent_id = ?", "governance", dir.ID).First(&govDir).Error; err != nil {
+		if err := db.Where("title = ? AND parent_id = ?", "本体治理", dir.ID).First(&govDir).Error; err != nil {
+			govDir = system.SysBaseMenu{
+				ParentId:  dir.ID,
+				Path:      "governance",
+				Name:      "governance",
+				Hidden:    false,
+				Component: "view/routerHolder.vue",
+				Sort:      80,
+				Meta: system.Meta{
+					Title:     "本体治理",
+					Icon:      "operation",
+					KeepAlive: false,
+				},
+			}
+			if err := db.Create(&govDir).Error; err != nil {
+				global.GVA_LOG.Error("本体种子：治理子目录创建失败", zap.Error(err))
+				return
+			}
+		} else if err := db.Model(&govDir).Updates(map[string]interface{}{
+			"name": "governance", "path": "governance", "sort": 80, "icon": "operation",
+		}).Error; err != nil {
+			global.GVA_LOG.Error("本体种子：治理子目录归一化失败", zap.Error(err))
 			return
 		}
 	}
@@ -58,13 +88,20 @@ func seedOntologyMenus() {
 		{Name: "annotationProperty", Title: "注释属性注册表", Icon: "collection", Component: "view/ontology/annotationProperty/annotationProperty.vue", Sort: 4},
 	}
 	for _, s := range seeds {
-		var count int64
-		db.Model(&system.SysBaseMenu{}).Where("parent_id = ? AND name = ?", dir.ID, s.Name).Count(&count)
-		if count > 0 {
+		var menu system.SysBaseMenu
+		// 已挂在本体治理子目录下（幂等跳过）
+		if err := db.Where("parent_id = ? AND name = ?", govDir.ID, s.Name).First(&menu).Error; err == nil {
 			continue
 		}
-		menu := system.SysBaseMenu{
-			ParentId:  dir.ID,
+		// 旧结构：直挂顶级目录 → 迁移进子目录（保留 id 与既有授权，仅改归属）
+		if err := db.Where("parent_id = ? AND name = ?", dir.ID, s.Name).First(&menu).Error; err == nil {
+			if err := db.Model(&menu).Update("parent_id", govDir.ID).Error; err != nil {
+				global.GVA_LOG.Error("本体种子：治理菜单迁移失败", zap.String("name", s.Name), zap.Error(err))
+			}
+			continue
+		}
+		menu = system.SysBaseMenu{
+			ParentId:  govDir.ID,
 			Path:      s.Name,
 			Name:      s.Name,
 			Hidden:    false,
@@ -81,9 +118,9 @@ func seedOntologyMenus() {
 			continue
 		}
 	}
-	// 目录 + 全部子菜单授权给 888
+	// 本体目录 + 治理子目录 + 全部治理叶子授权给 888（建模域由 seedOntologyModelMenus 授权）
 	var menus []system.SysBaseMenu
-	db.Where("name = ? OR parent_id = ?", "ontology", dir.ID).Find(&menus)
+	db.Where("id = ? OR id = ? OR parent_id = ?", dir.ID, govDir.ID, govDir.ID).Find(&menus)
 	for _, m := range menus {
 		var count int64
 		db.Table("sys_authority_menus").
