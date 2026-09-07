@@ -3,6 +3,7 @@ package v1
 import (
 	"github.com/flipped-aurora/gin-vue-admin/server/api/v1/example"
 	"github.com/flipped-aurora/gin-vue-admin/server/api/v1/ontology"
+	"github.com/flipped-aurora/gin-vue-admin/server/api/v1/report"
 	"github.com/flipped-aurora/gin-vue-admin/server/api/v1/system"
 )
 
@@ -12,4 +13,5 @@ type ApiGroup struct {
 	SystemApiGroup   system.ApiGroup
 	ExampleApiGroup  example.ApiGroup
 	OntologyApiGroup ontology.ApiGroup
+	ReportApiGroup   report.ApiGroup
 }

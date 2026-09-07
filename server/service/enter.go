@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/flipped-aurora/gin-vue-admin/server/service/example"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/ontology"
+	"github.com/flipped-aurora/gin-vue-admin/server/service/report"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/system"
 )
 
@@ -12,4 +13,5 @@ type ServiceGroup struct {
 	SystemServiceGroup   system.ServiceGroup
 	ExampleServiceGroup  example.ServiceGroup
 	OntologyServiceGroup ontology.ServiceGroup
+	ReportServiceGroup   report.ServiceGroup
 }

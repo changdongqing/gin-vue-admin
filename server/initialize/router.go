@@ -44,6 +44,7 @@ func Routers() *gin.Engine {
 	systemRouter := router.RouterGroupApp.System
 	exampleRouter := router.RouterGroupApp.Example
 	ontologyRouter := router.RouterGroupApp.Ontology
+	reportRouter := router.RouterGroupApp.Report
 	// 如果想要不使用nginx代理前端网页，可以修改 web/.env.production 下的
 	// VUE_APP_BASE_API = /
 	// VUE_APP_BASE_PATH = http://localhost
@@ -116,6 +117,7 @@ func Routers() *gin.Engine {
 		ontologyRouter.InitExtTableRouter(PrivateGroup)                     // 本体建模·外部表注册
 		ontologyRouter.InitExtBindingRouter(PrivateGroup)                   // 本体建模·类绑定
 		ontologyRouter.InitExtSyncRouter(PrivateGroup)                      // 本体建模·同步中心
+		reportRouter.InitDataSourceRouter(PrivateGroup)                     // 报表平台·数据源管理
 	}
 
 	//插件路由安装

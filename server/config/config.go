@@ -10,6 +10,7 @@ type Server struct {
 	System    System  `mapstructure:"system" json:"system" yaml:"system"`
 	Captcha   Captcha `mapstructure:"captcha" json:"captcha" yaml:"captcha"`
 	Migrate   Migrate `mapstructure:"migrate" json:"migrate" yaml:"migrate"`
+	Report    Report  `mapstructure:"report" json:"report" yaml:"report"`
 	// auto
 	AutoCode Autocode `mapstructure:"autocode" json:"autocode" yaml:"autocode"`
 	// gorm

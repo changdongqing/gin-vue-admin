@@ -5,6 +5,7 @@ import (
 	adapter "github.com/casbin/gorm-adapter/v3"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/example"
 	ontModel "github.com/flipped-aurora/gin-vue-admin/server/model/ontology"
+	repModel "github.com/flipped-aurora/gin-vue-admin/server/model/report"
 	sysModel "github.com/flipped-aurora/gin-vue-admin/server/model/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/plugin/announcement/model"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/system"
@@ -85,6 +86,7 @@ func (e *ensureTables) MigrateTable(ctx context.Context) (context.Context, error
 		ontModel.OntObject{},
 		ontModel.OntObjectAttrValue{},
 		ontModel.OntObjectRelation{},
+		repModel.ReportDataSource{},
 		adapter.CasbinRule{},
 
 		example.ExaFile{},

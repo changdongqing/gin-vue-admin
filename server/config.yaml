@@ -216,6 +216,8 @@ redis-list:
         - 172.21.0.3:7000
         - 172.21.0.4:7001
         - 172.21.0.2:7002
+report:
+    aes-key: "LIu3m9gnqZSrOtG105mdfN3bnzXHJOQ5lcXaa3uin/A="   # 数据源密码加密密钥：32字节随机数的base64（生成：openssl rand -base64 32），未配置则无法保存数据源密码
 sqlite:
     prefix: ""
     port: ""
