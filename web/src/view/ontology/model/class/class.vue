@@ -84,9 +84,9 @@
     createModelClass,
     updateModelClass,
     deleteModelClass,
-    getModelProjectAll,
     getModelClassByProject
   } from '@/api/ontology/modelClass'
+  import { getModelProjectAll } from '@/api/ontology/modelProject'
   import WarningBar from '@/components/warningBar/warningBar.vue'
   import { ref, onMounted } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'

@@ -12,4 +12,5 @@ export const findModelObjectProperty = (params) => service({ url: '/ontology/mod
 export const createModelObjectProperty = (data) => service({ url: '/ontology/modelObjectProperty/createModelObjectProperty', method: 'post', data })
 export const updateModelObjectProperty = (data) => service({ url: '/ontology/modelObjectProperty/updateModelObjectProperty', method: 'put', data })
 export const deleteModelObjectProperty = (params) => service({ url: '/ontology/modelObjectProperty/deleteModelObjectProperty', method: 'delete', params })
+export const instantiateModelObjectProperty = (data) => service({ url: '/ontology/modelObjectProperty/instantiateModelObjectProperty', method: 'post', data })
 export const suggestInverseModelObjectProperty = (params) => service({ url: '/ontology/modelObjectProperty/suggestInverseModelObjectProperty', method: 'get', params })

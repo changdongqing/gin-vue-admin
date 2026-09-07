@@ -82,7 +82,8 @@
 </template>
 
 <script setup>
-  import { getModelClassDetail, deleteModelDatatypeProperty, deleteModelObjectProperty } from '@/api/ontology/modelClass'
+  import { getModelClassDetail } from '@/api/ontology/modelClass'
+  import { deleteModelDatatypeProperty, deleteModelObjectProperty } from '@/api/ontology/modelProperty'
   import { ref, reactive } from 'vue'
   import { ElMessage } from 'element-plus'
 

@@ -42,11 +42,8 @@
 
 <script setup>
   import { getPropertyTemplatesForSupply } from '@/api/ontology/propertyTemplate'
-  import {
-    instantiateModelDatatypeProperty,
-    instantiateModelObjectProperty,
-    getModelClassDetail
-  } from '@/api/ontology/modelClass'
+  import { getModelClassDetail } from '@/api/ontology/modelClass'
+  import { instantiateModelDatatypeProperty, instantiateModelObjectProperty } from '@/api/ontology/modelProperty'
   import { ref, computed } from 'vue'
   import { ElMessage } from 'element-plus'
 

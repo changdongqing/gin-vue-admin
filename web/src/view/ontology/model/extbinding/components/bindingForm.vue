@@ -199,7 +199,8 @@
     getExtTableList,
     getExtTableColumns
   } from '@/api/ontology/extRegistry'
-  import { getModelProjectAll, getModelClassByProject, getModelClassDetail } from '@/api/ontology/modelClass'
+  import { getModelProjectAll } from '@/api/ontology/modelProject'
+  import { getModelClassByProject, getModelClassDetail } from '@/api/ontology/modelClass'
   import { createExtBinding, updateExtBinding, findExtBinding } from '@/api/ontology/extBinding'
   import { ref, computed } from 'vue'
   import { ElMessage } from 'element-plus'
