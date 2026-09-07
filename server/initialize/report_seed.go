@@ -58,7 +58,8 @@ func seedReportMenus() {
 	seeds := []menuSeed{
 		{Name: "dataSource", Title: "数据源管理", Icon: "coin", Component: "view/report/dataSource/dataSource.vue", Sort: 1},
 		{Name: "dataSet", Title: "数据集管理", Icon: "tickets", Component: "view/report/dataSet/dataSet.vue", Sort: 2},
-		// 后续：excelReport(sort=3,icon=document) / analysisReport(sort=4,icon=data-line)
+		{Name: "excelReport", Title: "Excel报表", Icon: "document", Component: "view/report/excel/excelReport.vue", Sort: 3},
+		// 后续：analysisReport(sort=4,icon=data-line)；预览 hidden 菜单归 04
 	}
 	for _, s := range seeds {
 		var count int64
@@ -126,6 +127,16 @@ func seedReportApis() {
 		{"/report/dataSet/updateDataSet", "PUT", "报表平台", "更新数据集"},
 		{"/report/dataSet/deleteDataSet", "DELETE", "报表平台", "删除数据集"},
 		{"/report/dataSet/testDataSetPreview", "POST", "报表平台", "数据集测试预览"},
+		{"/report/excelReport/getExcelReportList", "GET", "报表平台", "分页查询Excel报表"},
+		{"/report/excelReport/findExcelReport", "GET", "报表平台", "查询Excel报表详情"},
+		{"/report/excelReport/getExcelReportAll", "GET", "报表平台", "已启用Excel报表全量"},
+		{"/report/excelReport/getExcelReportDataSetFields", "GET", "报表平台", "报表关联数据集字段列表"},
+		{"/report/excelReport/createExcelReport", "POST", "报表平台", "创建Excel报表"},
+		{"/report/excelReport/updateExcelReport", "PUT", "报表平台", "更新Excel报表"},
+		{"/report/excelReport/deleteExcelReport", "DELETE", "报表平台", "删除Excel报表"},
+		{"/report/excelReport/copyExcelReport", "POST", "报表平台", "复制Excel报表"},
+		{"/report/excelReport/saveExcelTemplate", "POST", "报表平台", "保存Excel报表模板"},
+		{"/report/excelReport/bindExcelReportDataSets", "POST", "报表平台", "Excel报表关联数据集"},
 	}
 	addedRules := make([][]string, 0)
 	for _, s := range seeds {

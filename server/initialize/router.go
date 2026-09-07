@@ -119,6 +119,7 @@ func Routers() *gin.Engine {
 		ontologyRouter.InitExtSyncRouter(PrivateGroup)                      // 本体建模·同步中心
 		reportRouter.InitDataSourceRouter(PrivateGroup)                     // 报表平台·数据源管理
 		reportRouter.InitDataSetRouter(PrivateGroup)                        // 报表平台·数据集管理
+		reportRouter.InitExcelReportRouter(PrivateGroup)                    // 报表平台·Excel报表
 	}
 
 	//插件路由安装

@@ -7,9 +7,11 @@ import api "github.com/flipped-aurora/gin-vue-admin/server/api/v1"
 type RouterGroup struct {
 	DataSourceRouter
 	DataSetRouter
+	ExcelReportRouter
 }
 
 var (
 	dsApi      = api.ApiGroupApp.ReportApiGroup.DataSourceApi
 	dataSetApi = api.ApiGroupApp.ReportApiGroup.DataSetApi
+	excelApi   = api.ApiGroupApp.ReportApiGroup.ExcelReportApi
 )

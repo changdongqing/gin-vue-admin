@@ -90,6 +90,8 @@ func (e *ensureTables) MigrateTable(ctx context.Context) (context.Context, error
 		repModel.ReportDataSet{},
 		repModel.ReportDataSetParam{},
 		repModel.ReportDataSetTransform{},
+		repModel.ReportExcelReport{},
+		repModel.ReportExcelTemplate{},
 		adapter.CasbinRule{},
 
 		example.ExaFile{},

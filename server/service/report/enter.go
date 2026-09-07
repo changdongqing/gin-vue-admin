@@ -4,4 +4,5 @@ package report
 type ServiceGroup struct {
 	DataSourceService
 	DataSetService
+	ExcelReportService
 }
