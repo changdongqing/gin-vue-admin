@@ -179,3 +179,12 @@ export const resetPassword = (data) => {
     data: data
   })
 }
+
+// @Summary 获取用户精简全量（通用选择器数据，JWT 登录即可；无手机号/邮箱等敏感字段，不含冻结用户）
+// @Router /user/getUserSimpleList [get]
+export const getUserSimpleList = () => {
+  return service({
+    url: '/user/getUserSimpleList',
+    method: 'get'
+  })
+}
