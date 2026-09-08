@@ -43,12 +43,18 @@ func (p *plugin) Register(group *gin.Engine) {
 
 	// 失败降级：规则引擎是增强能力，构造失败只告警、不挂路由，不得 panic
 	//（Register 运行在 GVA 启动链路上，panic 会杀死整个进程）。
+	//
+	// 认证统一：WithoutLocalAuth 关闭 rulego 自带 /login、/users* 端点（其硬约束
+	// require_auth=true 已在 resource/rulego/config.conf 落实），身份体系桥接为
+	// GVA JWT（Authenticator）+ Casbin（Authorizer），rulego 侧不再产生独立登录态。
 	b, err := bridge.New(
 		bridge.WithAppOptions(
 			app.WithConfigFile(cfgFile), // base_path=/rulego、require_auth=true 等基线见该配置文件
 			app.WithModules(bootstrap.DefaultModules()...),
-			// M3 认证统一：app.WithAuthenticator / app.WithAuthorizer / bridge.WithoutLocalAuth
+			app.WithAuthenticator(&gvaAuthenticator{}),
+			app.WithAuthorizer(&gvaAuthorizer{}),
 		),
+		bridge.WithoutLocalAuth(),
 		bridge.WithResponseWrapper(gvaEnvelope),
 	)
 	if err != nil {
