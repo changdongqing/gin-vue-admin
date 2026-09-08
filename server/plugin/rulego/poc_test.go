@@ -231,3 +231,37 @@ func TestPocIotReadRegistered(t *testing.T) {
 		t.Fatalf("Failure 兜底路径未生效, out=%s", out)
 	}
 }
+
+// TestScheduleNotAvailableInChain 固化 P0 架构结论（03 文档 §4.2 修正版）：
+// endpoint/schedule 只注册在端点注册表（endpoint.Registry），不在链节点注册表
+// （rulego.Registry）——链内无法用它做周期触发（"schedule" 与 "endpoint/schedule"
+// 均报 component not found）。因此触发面收敛在 GVA 侧（collect 触发面：
+// cron 调 notify + MQTT 订阅调 notify，见 plugin/collect/service/trigger.go）。
+// 本测试为该结论的回归锚点：若未来引擎支持链内 endpoint 节点，此测试会失败提醒。
+func TestScheduleNotAvailableInChain(t *testing.T) {
+	b := newTestBridge(t)
+	srv := httptest.NewServer(b.Handler())
+	defer srv.Close()
+
+	for _, nodeType := range []string{"schedule", "endpoint/schedule"} {
+		dsl := `{
+	  "ruleChain": {"id": "poc_sched", "name": "poc-schedule", "root": true},
+	  "metadata": {
+	    "nodes": [
+	      {"id": "n_trigger", "type": "` + nodeType + `", "name": "每秒触发",
+	       "routers": [{"from": {"path": "*/1 * * * * *"}, "to": {"path": "default"}}]},
+	      {"id": "n_mark", "type": "jsTransform", "name": "构造输出",
+	       "configuration": {"jsScript": "return {'msg':{'tick':1},'metadata':metadata,'msgType':msgType};"}}
+	    ],
+	    "connections": [
+	      {"fromId": "n_trigger", "toId": "n_mark", "type": "Success"}
+	    ]
+	  }
+	}`
+		code, body := pocReq(t, srv, http.MethodPost, prefix+"/api/v1/rules/poc_sched", dsl)
+		if code != http.StatusBadRequest || !bytes.Contains(body, []byte("component not found")) {
+			t.Fatalf("type=%s：预期引擎拒绝链内 endpoint 节点（component not found），实际 status=%d body=%s",
+				nodeType, code, body)
+		}
+	}
+}
