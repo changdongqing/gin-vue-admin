@@ -159,6 +159,24 @@
             clearable
           />
         </el-form-item>
+        <el-form-item label="岗位" prop="postIds">
+          <el-select
+            v-model="userInfo.postIds"
+            multiple
+            filterable
+            clearable
+            placeholder="请选择岗位（可多选）"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="p in postOptions"
+              :key="p.ID"
+              :label="p.postName"
+              :value="p.ID"
+              :disabled="p.status !== 1"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="启用" prop="disabled">
           <el-switch v-model="userInfo.enable" inline-prompt :active-value="1" :inactive-value="2" />
         </el-form-item>
@@ -182,6 +200,7 @@
 
   import { getAuthorityList } from '@/api/authority'
   import { getDepartmentList } from '@/api/department'
+  import { getPostListAll, getUserPosts, setUserPosts } from '@/api/post'
   import GvaGrid, { useGvaGrid, useGvaGridDelete } from '@/components/gvaGrid'
   import CustomPic from '@/components/customPic/index.vue'
   import WarningBar from '@/components/warningBar/warningBar.vue'
@@ -358,8 +377,17 @@
     authorityId: '',
     authorityIds: [],
     departmentId: 0,
+    postIds: [],
     enable: 1
   })
+
+  // 岗位选项（启用岗位全量；编辑回显时停用岗位以 disabled 展示保证不丢值）
+  const postOptions = ref([])
+  const loadPostOptions = async () => {
+    const res = await getPostListAll()
+    postOptions.value = res.data.list || []
+  }
+  loadPostOptions()
 
   const rules = ref({
     userName: [
@@ -388,6 +416,19 @@
     authorityId: [{ required: true, message: '请选择用户角色', trigger: 'blur' }]
   })
   const userForm = ref(null)
+
+  // 用户保存成功后绑定岗位（岗位模块独立接口，全量覆盖）
+  const bindUserPosts = async (userId) => {
+    try {
+      const res = await setUserPosts({ userId, postIds: userInfo.value.postIds || [] })
+      if (res.code !== 0) {
+        ElMessage.warning('用户已保存，但岗位绑定失败：' + (res.msg || '请重试'))
+      }
+    } catch (e) {
+      ElMessage.warning('用户已保存，但岗位绑定失败：请重试')
+    }
+  }
+
   const enterAddUserDialog = async () => {
     userInfo.value.authorityId = userInfo.value.authorityIds[0]
     userForm.value.validate(async (valid) => {
@@ -398,6 +439,8 @@
         if (dialogFlag.value === 'add') {
           const res = await register(req)
           if (res.code === 0) {
+            // 用户创建成功后绑定岗位（register 返回含新用户ID）
+            await bindUserPosts(res.data.user.ID)
             ElMessage({ type: 'success', message: '创建成功' })
             await refresh()
             closeAddUserDialog()
@@ -406,6 +449,7 @@
         if (dialogFlag.value === 'edit') {
           const res = await setUserInfo(req)
           if (res.code === 0) {
+            await bindUserPosts(userInfo.value.ID)
             ElMessage({ type: 'success', message: '编辑成功' })
             await refresh()
             closeAddUserDialog()
@@ -421,6 +465,7 @@
     userInfo.value.headerImg = ''
     userInfo.value.authorityIds = []
     userInfo.value.departmentId = 0
+    userInfo.value.postIds = []
     addUserDialog.value = false
   }
 
@@ -459,6 +504,11 @@
   const openEdit = (row) => {
     dialogFlag.value = 'edit'
     userInfo.value = JSON.parse(JSON.stringify(row))
+    userInfo.value.postIds = []
+    // 回显已挂岗位（含停用岗位，选项中 disabled 展示）
+    getUserPosts({ userId: row.ID }).then((res) => {
+      userInfo.value.postIds = (res.data.list || []).map((p) => p.ID)
+    })
     addUserDialog.value = true
   }
 
