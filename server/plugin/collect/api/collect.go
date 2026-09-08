@@ -1,6 +1,8 @@
 package api
 
 import (
+	"io"
+	"net/http"
 	"strconv"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
@@ -354,4 +356,88 @@ func (CollectApi) GetChannelStatus(c *gin.Context) {
 		return
 	}
 	response.OkWithData(st, c)
+}
+
+// ---------- Excel 导入导出（03 文档 §五） ----------
+
+var importService = service.ImportService{}
+
+// GetImportTemplate 下载导入模板。
+func (CollectApi) GetImportTemplate(c *gin.Context) {
+	f, err := importService.GenerateTemplate()
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	buf, err := f.WriteToBuffer()
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	c.Header("Content-Disposition", "attachment; filename=collect-import-template.xlsx")
+	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buf.Bytes())
+}
+
+// ImportPreview 上传 Excel 并返回三分类预览。
+func (CollectApi) ImportPreview(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		response.FailWithMessage("缺少上传文件 file", c)
+		return
+	}
+	fh, err := file.Open()
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	defer fh.Close()
+	if file.Size > 10*1024*1024 {
+		response.FailWithMessage("文件超过 10MB 上限", c)
+		return
+	}
+	data, err := io.ReadAll(fh)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	res, err := importService.Preview(data)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithData(res, c)
+}
+
+// ImportCommit 确认导入（重新校验 + 事务 upsert + 自动部署）。
+func (CollectApi) ImportCommit(c *gin.Context) {
+	var body struct {
+		Data       service.ImportPayload `json:"data"`
+		AutoDeploy bool                  `json:"autoDeploy"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	res, err := importService.Commit(body.Data, body.AutoDeploy, operatorID(c))
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithData(res, c)
+}
+
+// ExportConfig 导出当前配置。
+func (CollectApi) ExportConfig(c *gin.Context) {
+	f, err := importService.Export()
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	buf, err := f.WriteToBuffer()
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	c.Header("Content-Disposition", "attachment; filename=collect-export.xlsx")
+	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buf.Bytes())
 }

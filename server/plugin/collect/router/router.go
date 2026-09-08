@@ -43,6 +43,11 @@ func (CollectRouter) Init(private *gin.RouterGroup) {
 		g.GET("parseChains", a.GetParseChainList)
 		g.POST("parseChains/:id/publish", a.PublishParseChain)
 		g.POST("parseChains/:id/test", a.TestParseChain)
+		// Excel 导入导出
+		g.GET("import/template", a.GetImportTemplate)
+		g.POST("import/preview", a.ImportPreview)
+		g.POST("import/commit", a.ImportCommit)
+		g.GET("import/export", a.ExportConfig)
 		// 实时数据与状态
 		g.GET("realtime", a.GetRealtime)
 		g.GET("channels/:id/status", a.GetChannelStatus)

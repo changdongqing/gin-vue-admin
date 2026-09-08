@@ -118,6 +118,10 @@ func seedCollectApis() {
 		{"/collect/parseChains/:id", "DELETE", "采集平台", "删除子流程"},
 		{"/collect/parseChains/:id/publish", "POST", "采集平台", "发布子流程"},
 		{"/collect/parseChains/:id/test", "POST", "采集平台", "子流程回放测试"},
+		{"/collect/import/template", "GET", "采集平台", "下载导入模板"},
+		{"/collect/import/preview", "POST", "采集平台", "导入预览"},
+		{"/collect/import/commit", "POST", "采集平台", "导入提交"},
+		{"/collect/import/export", "GET", "采集平台", "配置导出"},
 		{"/collect/realtime", "GET", "采集平台", "实时数据查询"},
 		{"/collect/channels/:id/status", "GET", "采集平台", "通道运行状态"},
 	}
