@@ -86,6 +86,12 @@ func DeployChannel(channelID uint, operatorID uint) (skipped bool, err error) {
 	hasLast := db.Where("channel_id = ? AND status = ?", ch.ID, "deployed").
 		Order("id desc").First(&last).Error == nil
 	if hasLast && last.DslHash == hash && BridgeClient().ChainExists(ChainID(ch.ID)) {
+		// 幂等跳过也确保触发面在位（首次部署挂载失败后可经此重试）
+		if !TriggerActive(ch.ID) {
+			if err := ReloadChannelTrigger(ch); err != nil {
+				return true, fmt.Errorf("规则链已部署，但触发器挂载失败: %w", err)
+			}
+		}
 		return true, nil
 	}
 
@@ -106,7 +112,9 @@ func DeployChannel(channelID uint, operatorID uint) (skipped bool, err error) {
 		return false, err
 	}
 	global.GVA_LOG.Info("采集通道已部署", zap.Uint("channelId", ch.ID), zap.String("chainId", chainID), zap.String("hash", hash[:8]))
-	ReloadChannelTrigger(ch) // 部署成功即恢复/刷新触发面
+	if err := ReloadChannelTrigger(ch); err != nil { // 部署成功即恢复/刷新触发面
+		return false, fmt.Errorf("规则链已部署，但触发器挂载失败: %w", err)
+	}
 	return false, nil
 }
 

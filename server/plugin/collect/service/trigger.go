@@ -40,20 +40,33 @@ func StartTriggers() {
 		return
 	}
 	for _, ch := range channels {
-		startChannelTriggerLocked(ch)
+		if err := startChannelTriggerLocked(ch); err != nil {
+			global.GVA_LOG.Error("采集触发器恢复失败", zap.Uint("channelId", ch.ID), zap.Error(err))
+		}
 	}
 	global.GVA_LOG.Info("采集触发面已启动", zap.Int("pollChannels", len(cronEntries)), zap.Int("reportChannels", len(mqttSubs)))
 }
 
-// ReloadChannelTrigger 通道部署/启用后刷新其触发器。
-func ReloadChannelTrigger(ch model.CollectChannel) {
+// ReloadChannelTrigger 通道部署/启用后刷新其触发器；挂载失败以 error 返回（部署接口透出前端）。
+func ReloadChannelTrigger(ch model.CollectChannel) error {
 	trigMu.Lock()
 	defer trigMu.Unlock()
 	stopChannelTriggerLocked(ch.ID)
 	if ch.Enable == nil || !*ch.Enable {
-		return
+		return nil
 	}
-	startChannelTriggerLocked(ch)
+	return startChannelTriggerLocked(ch)
+}
+
+// TriggerActive 触发器是否在位（幂等部署跳过时判断是否需补挂载）。
+func TriggerActive(channelID uint) bool {
+	trigMu.Lock()
+	defer trigMu.Unlock()
+	if _, ok := cronEntries[channelID]; ok {
+		return true
+	}
+	_, ok := mqttSubs[channelID]
+	return ok
 }
 
 // StopChannelTrigger 通道下线/删除时移除触发器。
@@ -74,7 +87,7 @@ func stopChannelTriggerLocked(channelID uint) {
 	}
 }
 
-func startChannelTriggerLocked(ch model.CollectChannel) {
+func startChannelTriggerLocked(ch model.CollectChannel) error {
 	chainID := ChainID(ch.ID)
 	switch ch.AccessMode {
 	case "poll":
@@ -93,10 +106,10 @@ func startChannelTriggerLocked(ch model.CollectChannel) {
 			}
 		})
 		if err != nil {
-			global.GVA_LOG.Error("采集 cron 注册失败", zap.Uint("channelId", ch.ID), zap.String("expr", expr), zap.Error(err))
-			return
+			return fmt.Errorf("cron 注册失败: %w", err)
 		}
 		cronEntries[ch.ID] = id
+		return nil
 	case "report":
 		var conn struct {
 			Server   string `json:"server"`
@@ -106,12 +119,12 @@ func startChannelTriggerLocked(ch model.CollectChannel) {
 			QoS      int    `json:"qos"`
 		}
 		if len(ch.ConnConfig) > 0 {
-			if err := json.Unmarshal(ch.ConnConfig, &conn); err != nil || conn.Server == "" || conn.Topic == "" {
-				global.GVA_LOG.Error("上报通道 conn_config 缺少 server/topic", zap.Uint("channelId", ch.ID))
-				return
+			if err := json.Unmarshal(ch.ConnConfig, &conn); err != nil {
+				return fmt.Errorf("conn_config 非法 JSON: %w", err)
 			}
-		} else {
-			return
+		}
+		if conn.Server == "" || conn.Topic == "" {
+			return fmt.Errorf("conn_config 缺少 server/topic，无法订阅上报报文")
 		}
 		opts := mqtt.NewClientOptions().
 			AddBroker(conn.Server).
@@ -123,8 +136,7 @@ func startChannelTriggerLocked(ch model.CollectChannel) {
 		}
 		client := mqtt.NewClient(opts)
 		if token := client.Connect(); token.Wait() && token.Error() != nil {
-			global.GVA_LOG.Error("上报通道 MQTT 连接失败", zap.Uint("channelId", ch.ID), zap.Error(token.Error()))
-			return
+			return fmt.Errorf("MQTT 连接失败(%s): %w", conn.Server, token.Error())
 		}
 		token := client.Subscribe(conn.Topic, byte(conn.QoS), func(_ mqtt.Client, m mqtt.Message) {
 			payload := string(m.Payload())
@@ -137,9 +149,11 @@ func startChannelTriggerLocked(ch model.CollectChannel) {
 			}
 		})
 		if token.Wait() && token.Error() != nil {
-			global.GVA_LOG.Error("上报通道订阅失败", zap.Uint("channelId", ch.ID), zap.Error(token.Error()))
-			return
+			client.Disconnect(500) // 订阅失败释放已建连接，避免泄漏
+			return fmt.Errorf("MQTT 订阅失败(topic=%s): %w", conn.Topic, token.Error())
 		}
 		mqttSubs[ch.ID] = client
+		return nil
 	}
+	return nil
 }
