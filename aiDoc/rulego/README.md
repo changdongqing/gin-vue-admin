@@ -23,6 +23,7 @@
 | ---- | ---- |
 | [01-集成方案分析.md](./01-集成方案分析.md) | 集成对象盘点、两侧架构对接分析（含认证/鉴权 SPI 实测签名）、六种集成方式对比与选型、目录与 go.mod 规划、依赖与版本影响（含共享依赖冲突表）、运行时对接与认证/鉴权桥接设计（§4.5/§4.6）、治理纪律、许可证合规、风险清单 |
 | [02-实施计划.md](./02-实施计划.md) | 分四个里程碑的落地步骤、具体命令与代码骨架、官方版本升级 SOP、验证清单 |
+| [03-采集平台快速采集配置详细设计.md](./03-采集平台快速采集配置详细设计.md) | 业务层详细设计：ThingsGateway 式三级模型（通道/设备/测点，事实源）+ 编译器（模型→规则链 DSL）+ 部署联动、Excel 三 sheet 点表导入（预览确认/upsert/导入即上数）、前端导入向导与采集状态监控（实时数据/RunLog 调试）、实施计划（P0 PoC 先行）；§十三为 P0 实测结论与实施偏差回填（触发面收敛 GVA 侧等） |
 
 ## 实施状态（2026-09-08）
 
@@ -32,7 +33,11 @@
 | M1 源码入库 | subtree 官方 v0.37.2 内嵌 `server/rulego/`、go.mod 双 replace、依赖抬升（mcp-go v0.44.0）、NOTICE、顺手修复 announcement/gen.go 指令误置 | `c62750a2` / `550193a3` / `61b25afa` |
 | M2 桥接运行 | 胶水插件（挂载/降级/mapXToken/watchShutdown/信封）、resource 配置基线、冒烟测试 | `522432c2` |
 | M3 认证统一 | Authenticator/Authorizer + 映射表 + WithoutLocalAuth，三态测试 | `76a60f6c` |
-| M4 配套 | Dockerfile 固定 golang:1.25-alpine、CI go 1.25、compose rulego 数据卷 | 见 git log |
+| M4 配套 | Dockerfile 固定 golang:1.25-alpine、CI go 1.25、compose rulego 数据卷 | `a9c5b637` |
+| 采集平台 P0 | PoC：join 聚合/超时/iotRead 实测（结论固化于 03 文档 §十三） | `2a2f6746` |
+| 采集平台 P1 | 三级模型+编译器 v1+部署联动+触发面+API+种子 | `862ce2fa` |
+| 采集平台 P2 | Excel 点表导入导出 | `362e2b957` |
+| 采集平台 P3 | 前端三页一向导一抽屉 + 设备类型 API | `e7c46e9a` |
 
 **验收状态**：`go build ./...` 全量通过；`go test ./plugin/rulego/...` 通过（401 信封 / admin-token 200 / 本地登录关闭 / 映射表全组合 / 头映射）。**待运行环境验证**（需 DB 的完整 GVA 进程与 Docker）：M2/M3 的 curl 三态、compose 一键起、subtree pull 演练。
 
