@@ -47,6 +47,9 @@ func serviceToken() (string, error) {
 		return serviceTokVal, nil
 	}
 	claims := request.CustomClaims{
+		// 身份名须与 plugin/rulego.ServiceUsername 一致：引擎启动按该用户名恢复
+		// workflows/<user> 下的采集链（plugin/rulego/service_user.go 保证其已注册）。
+		// 不直接引用该常量：本包被 plugin/rulego 的测试导入，会构成 import cycle。
 		BaseClaims: request.BaseClaims{Username: "collect-service", NickName: "采集服务账号", AuthorityId: 888},
 		RegisteredClaims: jwtlib.RegisteredClaims{
 			ExpiresAt: jwtlib.NewNumericDate(time.Now().Add(time.Hour)),

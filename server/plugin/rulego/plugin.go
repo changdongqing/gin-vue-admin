@@ -62,6 +62,7 @@ func (p *plugin) Register(group *gin.Engine) {
 		return
 	}
 	App = b.App()
+	ensureServiceUser(App)
 	watchShutdown(b)
 
 	// rulego 路由注册时已含 BasePath 前缀，挂载时勿 StripPrefix（官方 bridge 约定）。
