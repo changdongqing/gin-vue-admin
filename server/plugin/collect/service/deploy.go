@@ -63,6 +63,18 @@ func loadCompileInput(db *gorm.DB, ch model.CollectChannel) (compileInput, error
 // DeployChannel 编译并部署单通道（幂等：dsl_hash 与最新 deployed 记录一致则跳过）。
 // 返回 skipped=true 表示无变更未触发引擎动作。
 func DeployChannel(channelID uint, operatorID uint) (skipped bool, err error) {
+	return deployChannel(channelID, operatorID, false)
+}
+
+// ForceDeployChannel 无视幂等跳过，强制重存链并刷新触发面（启动对账用）：
+// store 里有链 ≠ 引擎已加载（如启动时用户池被跳过后 ChainExists 仍为真），
+// 对账必须真发 SaveChain 让引擎重建链实例。
+func ForceDeployChannel(channelID uint, operatorID uint) error {
+	_, err := deployChannel(channelID, operatorID, true)
+	return err
+}
+
+func deployChannel(channelID uint, operatorID uint, force bool) (skipped bool, err error) {
 	deployLock.Lock()
 	defer deployLock.Unlock()
 
@@ -85,7 +97,7 @@ func DeployChannel(channelID uint, operatorID uint) (skipped bool, err error) {
 	var last model.CollectDeployment
 	hasLast := db.Where("channel_id = ? AND status = ?", ch.ID, "deployed").
 		Order("id desc").First(&last).Error == nil
-	if hasLast && last.DslHash == hash && BridgeClient().ChainExists(ChainID(ch.ID)) {
+	if !force && hasLast && last.DslHash == hash && BridgeClient().ChainExists(ChainID(ch.ID)) {
 		// 幂等跳过也确保触发面在位（首次部署挂载失败后可经此重试）
 		if !TriggerActive(ch.ID) {
 			if err := ReloadChannelTrigger(ch); err != nil {

@@ -42,6 +42,7 @@ func (p *plugin) Register(group *gin.Engine) {
 	collectRouter := router.CollectRouter{}
 	collectRouter.Init(private)
 	global.GVA_LOG.Info("采集平台路由已挂载（/collect/**）")
-	// 触发面（cron / MQTT 订阅）启动
+	// 触发面（cron / MQTT 订阅）启动；引擎侧链状态随后以 DB 为准对账自愈
 	service.StartTriggers()
+	service.ReconcileChainsOnStartup()
 }

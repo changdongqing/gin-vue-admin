@@ -13,6 +13,7 @@ require (
 	github.com/casbin/gorm-adapter/v3 v3.41.0
 	github.com/dop251/goja v0.0.0-20260906210903-70ad66ec7ce4
 	github.com/dzwvip/gorm-oracle v0.1.2
+	github.com/eclipse/paho.mqtt.golang v1.5.1
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/gin-contrib/sse v1.0.0
 	github.com/gin-gonic/gin v1.10.0
@@ -113,7 +114,6 @@ require (
 	github.com/dlclark/regexp2/v2 v2.5.2 // indirect
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/eclipse/paho.mqtt.golang v1.5.1 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/expr-lang/expr v1.17.8 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect

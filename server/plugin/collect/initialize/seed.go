@@ -19,6 +19,7 @@ func SeedCollect() {
 	}
 	seedCollectMenus()
 	seedCollectApis()
+	seedCollectDemo()
 }
 
 func seedCollectMenus() {
