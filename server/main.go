@@ -61,5 +61,6 @@ func initializeSystem() {
 		initialize.SeedDataPermission() // 数据权限体系幂等种子（菜单/API/casbin/演示组织）
 		initialize.SeedOntology()       // 本体治理幂等种子（菜单/API/casbin）
 		initialize.SeedReport()         // 报表平台幂等种子（菜单/API/casbin/演示数据源）
+		initialize.SeedPost()           // 岗位管理幂等种子（菜单/API/casbin/字典）
 	}
 }

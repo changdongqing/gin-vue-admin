@@ -29,6 +29,7 @@ type ServiceGroup struct {
 	ApiTokenService
 	CompanyService
 	DepartmentService
+	PostService
 	AuthorityDataScopeService
 	DataScopeService
 }

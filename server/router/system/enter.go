@@ -26,6 +26,7 @@ type RouterGroup struct {
 	SkillsRouter
 	CompanyRouter
 	DepartmentRouter
+	PostRouter
 }
 
 var (
@@ -54,4 +55,5 @@ var (
 	aiWorkflowSessionApi = api.ApiGroupApp.SystemApiGroup.AIWorkflowSessionApi
 	companyApi           = api.ApiGroupApp.SystemApiGroup.CompanyApi
 	departmentApi        = api.ApiGroupApp.SystemApiGroup.DepartmentApi
+	postApi              = api.ApiGroupApp.SystemApiGroup.PostApi
 )

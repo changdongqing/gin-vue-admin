@@ -254,6 +254,10 @@ func (userService *UserService) DeleteUser(id int) (err error) {
 		if err := tx.Delete(&[]system.SysUserAuthority{}, "sys_user_id = ?", id).Error; err != nil {
 			return err
 		}
+		// 清理员工-岗位关联（岗位模块 sys_user_post，防悬空关联）
+		if err := tx.Where("user_id = ?", id).Delete(&system.SysUserPost{}).Error; err != nil {
+			return err
+		}
 		return nil
 	})
 }

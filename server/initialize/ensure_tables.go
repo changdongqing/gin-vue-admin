@@ -62,6 +62,8 @@ func (e *ensureTables) MigrateTable(ctx context.Context) (context.Context, error
 		sysModel.SysApiToken{},
 		sysModel.SysCompany{},
 		sysModel.SysDepartment{},
+		sysModel.SysPost{},
+		sysModel.SysUserPost{},
 		sysModel.SysAuthorityDataScope{},
 		ontModel.OntPropertyTemplate{},
 		ontModel.OntClassTemplate{},

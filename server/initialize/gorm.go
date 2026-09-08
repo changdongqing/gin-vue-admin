@@ -68,6 +68,8 @@ func RegisterTables() {
 		system.SysLoginLog{},
 		system.SysCompany{},
 		system.SysDepartment{},
+		system.SysPost{},
+		system.SysUserPost{},
 		system.SysAuthorityDataScope{},
 
 		ontology.OntPropertyTemplate{},

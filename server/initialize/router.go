@@ -100,6 +100,7 @@ func Routers() *gin.Engine {
 		systemRouter.InitApiTokenRouter(PrivateGroup)                       // apiToken签发
 		systemRouter.InitCompanyRouter(PrivateGroup, PublicGroup)           // 公司管理
 		systemRouter.InitDepartmentRouter(PrivateGroup, PublicGroup)        // 部门管理
+		systemRouter.InitPostRouter(PrivateGroup, PublicGroup)              // 岗位管理
 		exampleRouter.InitCustomerRouter(PrivateGroup)                      // 客户路由
 		exampleRouter.InitFileUploadAndDownloadRouter(PrivateGroup)         // 文件上传下载功能路由
 		exampleRouter.InitAttachmentCategoryRouterRouter(PrivateGroup)      // 文件上传下载分类
