@@ -369,9 +369,9 @@ func (userService *UserService) ResetPassword(ID uint, password string) (err err
 
 // GetUserSimpleList 通用选择器用户全量（未软删 + 未冻结，含部门名与岗位ID；字段白名单无手机号/邮箱等敏感字段）
 func (userService *UserService) GetUserSimpleList() (list []response.UserSimple, err error) {
-	// 主查询：联查部门名（enable=2 冻结用户不返回——冻结用户不可被协作指派）
+	// 主查询：联查部门名（enable=2 冻结用户不返回——冻结用户不可被协作指派；username 需别名对齐 UserName 字段的蛇形匹配）
 	err = global.GVA_DB.Table("sys_users u").
-		Select("u.id, u.username, u.nick_name, u.department_id, d.name AS department_name").
+		Select("u.id, u.username AS user_name, u.nick_name, u.department_id, d.name AS department_name").
 		Joins("LEFT JOIN sys_departments d ON d.id = u.department_id AND d.deleted_at IS NULL").
 		Where("u.deleted_at IS NULL AND u.enable = 1").
 		Order("u.id").
@@ -390,6 +390,9 @@ func (userService *UserService) GetUserSimpleList() (list []response.UserSimple,
 	}
 	for i := range list {
 		list[i].PostIds = m[list[i].ID]
+		if list[i].PostIds == nil {
+			list[i].PostIds = []uint{}
+		}
 	}
 	return
 }

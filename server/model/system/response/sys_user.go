@@ -21,5 +21,5 @@ type UserSimple struct {
 	NickName       string `json:"nickName"`
 	DepartmentId   uint   `json:"departmentId"`
 	DepartmentName string `json:"departmentName"`
-	PostIds        []uint `json:"postIds"`
+	PostIds        []uint `json:"postIds" gorm:"-"` // 聚合字段：service 内存分组装配，非查询列
 }
