@@ -22,7 +22,13 @@ import (
 //  5. execute/notify 的响应经 gvaEnvelope 包装。
 
 // TemplateVersion 编译模板版本（模板结构演进时递增，全量重编译用）。
-const TemplateVersion = "1"
+// v2 修正两处实测 bug（2026-09 端到端联调）：
+//  1. ts 列类型：collect_realtime.ts 为 bigint(unix ms)，v1 误生成 to_timestamp()/now()
+//     （timestamptz），所有落库 INSERT 被 PgSQL 拒绝；且 x/iotRead 点位 timestamp 为
+//     纳秒，需归一化为 ms（sqlScript 统一处理）；
+//  2. flow 节点输出为 WrapperMsg 数组（{nodeId,msg:{data},err}，与 join 同形态），
+//     v1 reportBuildScript 直接当设备数组用导致上报数据全部丢弃，v2 先解包再聚合。
+const TemplateVersion = "2"
 
 // ChainID 通道主链在 rulego 侧的 ID。
 func ChainID(channelID uint) string { return fmt.Sprintf("collect_ch_%d", channelID) }
@@ -416,14 +422,30 @@ func reportNormScript(payloadType string) string {
 	return passthroughScript
 }
 
-// reportBuildScript 报文型组装：子流程输出 {device, points} → 大 JSON。
+// reportBuildScript 报文型组装：解包 flow 的 WrapperMsg（{nodeId,msg:{data},err}），
+// 取子流程输出的设备数组（[{id,device,points}]，亦兼容单对象/直出形态）→ 大 JSON。
 func reportBuildScript(chID uint, chName string) string {
-	return "var d = Array.isArray(msg) ? msg : [msg];\n" +
-		"return {'msg':{'channel':{'id':" + strconv.FormatUint(uint64(chID), 10) +
-		",'name':'" + jsEscape(chName) + "','ts':Date.now()},'devices':d},'metadata':metadata,'msgType':'JSON'};"
+	var b strings.Builder
+	b.WriteString("var devices = [];\n")
+	b.WriteString("var arr = Array.isArray(msg) ? msg : [msg];\n")
+	b.WriteString("for (var i = 0; i < arr.length; i++) {\n")
+	b.WriteString("  var w = arr[i];\n")
+	b.WriteString("  if (w.nodeId !== undefined) {\n")
+	b.WriteString("    if (w.err) { devices.push({id:0, device:String(w.nodeId), points:[], err:String(w.err), quality:'timeout'}); continue; }\n")
+	b.WriteString("    if (!w.msg || !w.msg.data) { continue; }\n")
+	b.WriteString("    var inner = JSON.parse(w.msg.data);\n")
+	b.WriteString("    if (!Array.isArray(inner)) { inner = [inner]; }\n")
+	b.WriteString("    for (var j = 0; j < inner.length; j++) { devices.push(inner[j]); }\n")
+	b.WriteString("  } else { devices.push(w); }\n")
+	b.WriteString("}\n")
+	b.WriteString("return {'msg':{'channel':{'id':" + strconv.FormatUint(uint64(chID), 10) +
+		",'name':'" + jsEscape(chName) + "','ts':Date.now()},'devices':devices},'metadata':metadata,'msgType':'JSON'};")
+	return b.String()
 }
 
 // sqlScript 大 JSON → 多行 UPSERT SQL（collect_realtime）。值统一字符串化（text 列）。
+// ts 列为 bigint(unix ms)：点位时间戳在此统一归一化（x/iotRead 为纳秒、网关报文为毫秒，
+// 兜底 Date.now()），不得用 to_timestamp()/now()（timestamptz，类型不符）。
 func sqlScript() string {
 	var b strings.Builder
 	b.WriteString("function esc(s){return String(s).replace(/'/g,\"''\");}\n")
@@ -435,8 +457,10 @@ func sqlScript() string {
 	b.WriteString("  for (var j = 0; j < pts.length; j++) {\n")
 	b.WriteString("    var p = pts[j];\n")
 	b.WriteString("    var pk = ch.id + ':' + d.id + ':' + p.name;\n")
-	b.WriteString("    var ts = p.ts ? ('to_timestamp(' + Math.floor(p.ts / 1000) + ')') : 'now()';\n")
-	b.WriteString("    rows.push(\"('\" + esc(pk) + \"',\" + ch.id + \",\" + d.id + \",'\" + esc(p.name) + \"','\" + esc(p.value === null ? '' : p.value) + \"','\" + (p.quality || 'good') + \"','\" + esc(p.error || '') + \"',\" + ts + \")\");\n")
+	b.WriteString("    var t = p.ts ? Math.floor(p.ts) : 0;\n")
+	b.WriteString("    if (t > 1e17) { t = Math.floor(t / 1e6); } else if (t > 1e14) { t = Math.floor(t / 1e3); }\n")
+	b.WriteString("    if (!t) { t = Date.now(); }\n")
+	b.WriteString("    rows.push(\"('\" + esc(pk) + \"',\" + ch.id + \",\" + d.id + \",'\" + esc(p.name) + \"','\" + esc(p.value === null ? '' : p.value) + \"','\" + (p.quality || 'good') + \"','\" + esc(p.error || '') + \"',\" + t + \")\");\n")
 	b.WriteString("  }\n")
 	b.WriteString("}\n")
 	b.WriteString("if (rows.length === 0) { return {'msg':msg,'metadata':metadata,'msgType':msgType}; }\n")
