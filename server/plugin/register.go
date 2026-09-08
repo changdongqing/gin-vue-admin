@@ -4,4 +4,5 @@ import (
 	_ "github.com/flipped-aurora/gin-vue-admin/server/plugin/announcement"
 	_ "github.com/flipped-aurora/gin-vue-admin/server/plugin/auto"
 	_ "github.com/flipped-aurora/gin-vue-admin/server/plugin/rulego"
+	_ "github.com/flipped-aurora/gin-vue-admin/server/plugin/collect"
 )
