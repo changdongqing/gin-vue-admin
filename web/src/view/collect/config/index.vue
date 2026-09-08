@@ -24,8 +24,9 @@
           <template #default="{ data }">
             <span class="flex-1 flex justify-between items-center pr-1">
               <span>
-                <el-tag v-if="data.kind === 'channel'" size="small" :type="deployBadge(data.raw).type" class="mr-1">
-                  {{ deployBadge(data.raw).text }}
+                <!-- data 即 decorate 后的节点对象（含 ID/enable/kind），无 raw 字段 -->
+                <el-tag v-if="data.kind === 'channel'" size="small" :type="deployBadge(data).type" class="mr-1">
+                  {{ deployBadge(data).text }}
                 </el-tag>
                 {{ data.label }}
               </span>
