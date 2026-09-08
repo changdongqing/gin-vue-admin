@@ -42,3 +42,6 @@ web/pnpm-lock.yaml
 *.sqlite
 *.sqlite3
 worktrees/
+
+# rulego 引擎运行时数据（持久化链实例/运行日志/调试库），勿提交
+/server/resource/rulego/data/
