@@ -9,6 +9,9 @@ import { ElTag, ElImage, ElButton, ElSelect, ElOption, ElDatePicker } from 'elem
 import { useDictionaryStore } from '@/pinia/modules/dictionary'
 import { useUserStore } from '@/pinia/modules/user'
 import { getUrl } from '@/utils/image'
+import GvaChooseUser from '@/components/choose/chooseUser.vue'
+import GvaChooseDept from '@/components/choose/chooseDept.vue'
+import { ensureUsers, ensureDepts, resolveUserLabel, resolveDeptLabel } from '@/components/choose/cache'
 
 const DATETIME_FORMAT = 'yyyy-MM-dd hh:mm:ss'
 
@@ -180,6 +183,79 @@ VxeUI.renderer.add('gvaDateRange', {
     data[field] = undefined
   }
 })
+
+// —— 通用选择器（用户/部门）渲染器 ——
+
+// 单元格：ID/ID 数组 → 名称文本/el-tag 列表；renderTableDefault 内读取 reactive 缓存，
+// 未就绪显示原值、到位后自动重渲染（dictCache 同款机制）；ensure 为幂等单飞副作用
+function renderChooseIdsCell(value, props, resolveLabel, ensure) {
+  ensure()
+  if (value === '' || value === null || value === undefined) return []
+  const ids = Array.isArray(value) ? value : [value]
+  const tags = ids.map((id) => {
+    const label = resolveLabel(id)
+    return { id, label: label || String(id) }
+  })
+  if (Array.isArray(value) || (props && props.multiple)) {
+    return [
+      h(
+        'div',
+        { style: { display: 'flex', flexWrap: 'wrap', gap: '4px' } },
+        tags.map((item) => h(ElTag, { key: String(item.id), size: 'small' }, { default: () => item.label }))
+      )
+    ]
+  }
+  return [h('span', tags[0].label)]
+}
+
+// 查询项：渲染 GvaChooseUser/GvaChooseDept（v-model 绑 data[field]，props 透传）
+function chooseSelectRenderer(component, ensure, placeholderDefault) {
+  return {
+    renderFormItemContent(renderOpts, { data, field }) {
+      const props = renderOpts.props || {}
+      ensure()
+      return [
+        h(component, {
+          modelValue: data[field],
+          'onUpdate:modelValue': (value) => {
+            data[field] = value
+          },
+          multiple: props.multiple,
+          mode: props.mode,
+          params: props.params,
+          placeholder: props.placeholder || placeholderDefault,
+          clearable: props.clearable !== false,
+          style: { width: '100%' }
+        })
+      ]
+    },
+    // 重置钩子入参不含 renderOpts，从 item.itemRender.props 取 multiple
+    formItemResetMethod({ data, field, item }) {
+      const props = (item && item.itemRender && item.itemRender.props) || {}
+      data[field] = props.multiple || Array.isArray(data[field]) ? [] : undefined
+    }
+  }
+}
+
+/** 用户 ID/ID 数组 → 昵称（用户名）/tag 列表（props: { multiple }） */
+VxeUI.renderer.add('gvaChooseUser', {
+  renderTableDefault(renderOpts, { row, column }) {
+    const value = XEUtils.get(row, column.field)
+    return renderChooseIdsCell(value, renderOpts.props, resolveUserLabel, ensureUsers)
+  }
+})
+
+VxeUI.renderer.add('gvaChooseUserSelect', chooseSelectRenderer(GvaChooseUser, ensureUsers, '请选择用户'))
+
+/** 部门 ID/ID 数组 → 部门名/tag 列表（props: { multiple }） */
+VxeUI.renderer.add('gvaChooseDept', {
+  renderTableDefault(renderOpts, { row, column }) {
+    const value = XEUtils.get(row, column.field)
+    return renderChooseIdsCell(value, renderOpts.props, resolveDeptLabel, ensureDepts)
+  }
+})
+
+VxeUI.renderer.add('gvaChooseDeptSelect', chooseSelectRenderer(GvaChooseDept, ensureDepts, '请选择部门'))
 
 export function setupGvaGridRenderers() {
   // renderer.add 为模块加载时全局注册，此处保留安装函数形式便于统一初始化
