@@ -1,0 +1,150 @@
+/*
+ * Copyright 2024 The RuleGo Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package types
+
+import "errors"
+
+const (
+	CallbackFuncOnRuleChainCompleted = "onRuleChainCompleted"
+	CallbackFuncOnNodeCompleted      = "onNodeCompleted"
+	CallbackFuncDebug                = "onDebug"
+)
+
+const (
+	Global = "global"
+	// Vars ruleChain dsl additionalInfo vars key
+	Vars = "vars"
+	// Secrets ruleChain dsl additionalInfo secrets key
+	Secrets = "secrets"
+	// RuleChainKey ruleChain dsl key for accessing rule chain properties
+	// RuleChainKey 规则链 DSL 键，用于访问规则链属性
+	RuleChainKey = "ruleChain"
+)
+
+const (
+	EndpointTypePrefix                = "endpoint/"
+	NodeConfigurationPrefixInstanceId = "ref://"
+	// NamespaceSeparator defines the separator for namespace prefixes
+	NamespaceSeparator = ":"
+)
+
+// Node type constants define the standard node types used in rule chains.
+// 节点类型常量定义规则链中使用的标准节点类型。
+const (
+	// NodeTypeEnd represents the end node type that triggers rule chain completion callbacks
+	// NodeTypeEnd 表示触发规则链完成回调的结束节点类型
+	NodeTypeEnd = "end"
+)
+
+const (
+	//NodeConfigurationKeyIsInitNetResource 组件配置key是否是初始化网络资源，用于节点组件初始化参数校验区分
+	NodeConfigurationKeyIsInitNetResource = "$initNetResource"
+	// NodeConfigurationKeyChainCtx 获取规则链上下文Key, value类型: ChainCtx
+	NodeConfigurationKeyChainCtx = "$chainCtx"
+	//NodeConfigurationKeySelfDefinition 获取节点定义，value类型: RuleNode
+	NodeConfigurationKeySelfDefinition = "$selfDefinition"
+	//NodeConfigurationKeyRuleChainDefinition 获取规则链定义，应用于动态endpoint的初始化。value类型: *RuleChain
+	NodeConfigurationKeyRuleChainDefinition = "$ruleChainDefinition"
+	//NodeConfigurationKeySessionKey 服务端型 endpoint 会话寻址的 sessionKey 配置键（值支持 ${} 表达式或数组多候选）
+	NodeConfigurationKeySessionKey = "sessionKey"
+	//NodeConfigurationKeySessionTTL 服务端型 endpoint 会话空闲 TTL（秒，<=0 使用默认 1800）
+	NodeConfigurationKeySessionTTL = "sessionTTL"
+)
+
+var (
+	// ErrConcurrencyLimitReached is the error returned when the concurrency limit has been reached
+	ErrConcurrencyLimitReached = errors.New("concurrency limit reached")
+	ErrCacheNotInitialized     = errors.New("cache not initialized")
+	// ErrEngineShuttingDown is the error returned when the engine is shutting down and cannot accept new messages
+	ErrEngineShuttingDown = errors.New("engine is shutting down")
+	// ErrEngineNotInitialized is the error returned when the rule engine is not initialized
+	ErrEngineNotInitialized = errors.New("rule engine not initialized")
+	// ErrEngineReloadTimeout is the error returned when engine reload operation times out
+	ErrEngineReloadTimeout = errors.New("engine reload timeout")
+	// ErrEngineReloadBackpressureLimit is the error returned when reload backpressure limit is reached
+	// to prevent memory overflow during high-traffic reload operations
+	ErrEngineReloadBackpressureLimit = errors.New("engine reload backpressure limit reached - rejecting message to prevent memory overflow")
+	// ErrRuleChainHasNoNodes is the error returned when the rule chain has no nodes
+	ErrRuleChainHasNoNodes = errors.New("the rule chain has no nodes")
+	// ErrEngineDisabled is returned when attempting to use a disabled rule chain.
+	ErrEngineDisabled = errors.New("the rule chain has been disabled")
+	// ErrEngineDslEmpty is returned when the rule chain dsl is empty.
+	ErrEngineDslEmpty = errors.New("dsl can not empty")
+)
+
+const (
+	// DefaultRelationType 找不到匹配节点时使用的默认关系名称
+	// DefaultRelationType is the default relation name used when no matching node is found.
+	DefaultRelationType = "Default"
+
+	// DefaultRelationTypeKey 用于自定义默认关系类型的配置属性键
+	// DefaultRelationTypeKey is the configuration property key for customizing the default relation type.
+	DefaultRelationTypeKey = "defaultRelationType"
+)
+
+const (
+	// KeyStreamCompleted 流式完成键
+	KeyStreamCompleted = "stream_completed"
+	// KeyStreamStart 流式开始键
+	KeyStreamStart = "stream_start"
+	// ValueTrue 真值字符串
+	ValueTrue = "true"
+)
+
+const (
+	// KeyDebugMode per-message debug mode metadata key
+	// KeyDebugMode per-message 调试模式元数据键
+	KeyDebugMode = "_debugMode"
+	// KeySkipTellNext per-message skip tell next metadata key
+	// KeySkipTellNext per-message 跳过通知下一节点元数据键
+	KeySkipTellNext = "_skipTellNext"
+	// KeyTriggerSource trigger source metadata key for run records
+	// KeyTriggerSource 运行记录触发来源元数据键
+	KeyTriggerSource = "_triggerSource"
+	// TriggerSourceEndpoint generic trigger source value for endpoint triggers
+	// TriggerSourceEndpoint endpoint 触发的通用来源值
+	TriggerSourceEndpoint = "endpoint"
+)
+
+// RunLogMode is the run-log granularity for a rule chain execution.
+// RunLogMode 是规则链一次执行的运行记录粒度。
+type RunLogMode string
+
+const (
+	// RunLogModeOff disables per-node log collection (default).
+	// RunLogModeOff 不收集逐节点日志（默认）。
+	RunLogModeOff RunLogMode = "off"
+	// RunLogModeSummary triggers completion callbacks but skips per-node logs (zero overhead).
+	// RunLogModeSummary 触发完成回调但不收集逐节点日志（零开销）。
+	RunLogModeSummary RunLogMode = "summary"
+	// RunLogModeDetail triggers completion callbacks and collects per-node in/out logs.
+	// RunLogModeDetail 触发完成回调并收集逐节点 in/out 日志。
+	RunLogModeDetail RunLogMode = "detail"
+)
+
+// AdditionalInfo key under ruleChain.additionalInfo that overrides the global
+// Config.RunLogMode for a specific chain. Empty/absent means "use the global value".
+// 链级 additionalInfo 中覆盖全局 Config.RunLogMode 的键。
+// 空值/缺省表示沿用全局配置。
+const AdditionalInfoKeyRunLogMode = "runLogMode"
+
+const (
+	// KeyErrorMsg 节点处理失败时写入 metadata 的错误信息键
+	// 供 Failure 分支下游组件通过 ${metadata.errorMsg} 消费
+	// KeyErrorMsg metadata key written on node failure, consumable via ${metadata.errorMsg} in the Failure branch
+	KeyErrorMsg = "errorMsg"
+)

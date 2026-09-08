@@ -1,0 +1,193 @@
+/*
+ * Copyright 2025 The RuleGo Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package common
+
+import (
+	"encoding/json"
+	"testing"
+	"time"
+
+	"github.com/rulego/rulego/api/types"
+	"github.com/rulego/rulego/test"
+	"github.com/rulego/rulego/test/assert"
+)
+
+type MockJoinRuleContext struct {
+	*test.NodeTestRuleContext
+	MsgList []types.WrapperMsg
+}
+
+func (ctx *MockJoinRuleContext) TellCollect(msg types.RuleMsg, callback func(msgList []types.WrapperMsg)) bool {
+	callback(ctx.MsgList)
+	return true
+}
+
+func TestJoinNode(t *testing.T) {
+	var targetNodeType = "join"
+
+	t.Run("NewNode", func(t *testing.T) {
+		test.NodeNew(t, targetNodeType, &JoinNode{}, types.Configuration{}, Registry)
+	})
+
+	t.Run("InitNode", func(t *testing.T) {
+		test.NodeInit(t, targetNodeType, types.Configuration{
+			"timeout": 10,
+		}, types.Configuration{
+			"timeout": 10,
+		}, Registry)
+	})
+
+	t.Run("DefaultConfig", func(t *testing.T) {
+		test.NodeInit(t, targetNodeType, types.Configuration{}, types.Configuration{
+			"timeout": 30,
+		}, Registry)
+	})
+
+	t.Run("OnMsg", func(t *testing.T) {
+
+		node1, err := test.CreateAndInitNode(targetNodeType, types.Configuration{
+			"timeout": 10,
+		}, Registry)
+		assert.Nil(t, err)
+		node2, _ := test.CreateAndInitNode(targetNodeType, types.Configuration{}, Registry)
+
+		metaData := types.BuildMetadata(make(map[string]string))
+		metaData.PutValue("productType", "test")
+		msgList := []test.Msg{
+			{
+				MetaData:   metaData,
+				MsgType:    "ACTIVITY_EVENT1",
+				Data:       "{\"temperature\":41,\"humidity\":90}",
+				AfterSleep: time.Millisecond * 200,
+			},
+		}
+		var nodeList = []test.NodeAndCallback{
+			{
+				Node:    node1,
+				MsgList: msgList,
+				Callback: func(msg types.RuleMsg, relationType string, err error) {
+					assert.Equal(t, types.Success, relationType)
+				},
+			},
+			{
+				Node:    node2,
+				MsgList: msgList,
+				Callback: func(msg types.RuleMsg, relationType string, err error) {
+					assert.Equal(t, types.Success, relationType)
+				},
+			},
+		}
+		for _, item := range nodeList {
+			test.NodeOnMsgWithChildren(t, item.Node, item.MsgList, item.ChildrenNodes, item.Callback)
+		}
+		time.Sleep(time.Millisecond * 20)
+
+	})
+
+	t.Run("MergeToMap", func(t *testing.T) {
+		// Case 1: MergeToMap = true
+		t.Run("True", func(t *testing.T) {
+			config := types.Configuration{
+				"mergeToMap": true,
+			}
+			node := &JoinNode{}
+			err := node.Init(types.NewConfig(), config)
+			assert.Nil(t, err)
+
+			msgList := []types.WrapperMsg{
+				{
+					NodeId: "node1",
+					Msg: types.RuleMsg{
+						Data:     types.NewSharedData("{\"a\": 1, \"b\": 2}"),
+						Metadata: types.NewMetadata(),
+						DataType: types.JSON,
+					},
+				},
+				{
+					NodeId: "node2",
+					Msg: types.RuleMsg{
+						Data:     types.NewSharedData("{\"c\": 3}"),
+						Metadata: types.NewMetadata(),
+						DataType: types.JSON,
+					},
+				},
+				{
+					NodeId: "node3",
+					Msg: types.RuleMsg{
+						Data:     types.NewSharedData("not json"),
+						Metadata: types.NewMetadata(),
+						DataType: types.JSON,
+					},
+				},
+			}
+
+			baseCtx := test.NewRuleContext(types.NewConfig(), func(msg types.RuleMsg, relationType string, err error) {
+				assert.Equal(t, types.Success, relationType)
+				var result map[string]interface{}
+				json.Unmarshal([]byte(msg.GetData()), &result)
+				assert.Equal(t, 1.0, result["a"])
+				assert.Equal(t, 2.0, result["b"])
+				assert.Equal(t, 3.0, result["c"])
+				assert.Equal(t, "not json", result["node3"])
+			}).(*test.NodeTestRuleContext)
+
+			ctx := &MockJoinRuleContext{
+				NodeTestRuleContext: baseCtx,
+				MsgList:             msgList,
+			}
+
+			node.OnMsg(ctx, types.RuleMsg{})
+		})
+
+		// Case 2: MergeToMap = false
+		t.Run("False", func(t *testing.T) {
+			config := types.Configuration{
+				"mergeToMap": false,
+			}
+			node := &JoinNode{}
+			err := node.Init(types.NewConfig(), config)
+			assert.Nil(t, err)
+
+			msgList := []types.WrapperMsg{
+				{
+					NodeId: "node1",
+					Msg: types.RuleMsg{
+						Data:     types.NewSharedData("{\"a\": 1}"),
+						Metadata: types.NewMetadata(),
+						DataType: types.JSON,
+					},
+				},
+			}
+
+			baseCtx := test.NewRuleContext(types.NewConfig(), func(msg types.RuleMsg, relationType string, err error) {
+				assert.Equal(t, types.Success, relationType)
+				// It should be a list
+				var list []interface{}
+				err = json.Unmarshal([]byte(msg.GetData()), &list)
+				assert.Nil(t, err)
+				assert.Equal(t, 1, len(list))
+			}).(*test.NodeTestRuleContext)
+
+			ctx := &MockJoinRuleContext{
+				NodeTestRuleContext: baseCtx,
+				MsgList:             msgList,
+			}
+
+			node.OnMsg(ctx, types.RuleMsg{})
+		})
+	})
+}

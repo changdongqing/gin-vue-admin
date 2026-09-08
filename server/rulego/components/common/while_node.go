@@ -1,0 +1,294 @@
+/*
+ * Copyright 2025 The RuleGo Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package common
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"strconv"
+	"strings"
+	"sync"
+
+	"github.com/rulego/rulego/api/types"
+	"github.com/rulego/rulego/components/base"
+	"github.com/rulego/rulego/utils/el"
+	"github.com/rulego/rulego/utils/json"
+	"github.com/rulego/rulego/utils/maps"
+	"github.com/rulego/rulego/utils/str"
+)
+
+func init() {
+	// Register the WhileNode with the component registry on initialization.
+	Registry.Add(&WhileNode{})
+}
+
+// WhileNodeConfiguration defines the configuration for the WhileNode.
+type WhileNodeConfiguration struct {
+	// Condition is the expression to check before each iteration. Loop continues while true.
+	Condition string `json:"condition" label:"Condition" desc:"Expression checked each iteration. Loop continues while true. Example: ${msg.count} < 10" required:"true"`
+	// Do is the node ID or sub-chain to execute each iteration.
+	Do string `json:"do" label:"Do" desc:"Node ID or sub-chain per iteration. Format: {nodeId} or chain:{chainId}" required:"true"`
+	// Mode: 0=do not process, 1=merge results, 2=replace msg
+	Mode int `json:"mode" label:"Mode" desc:"0=ignore results, 1=merge into array, 2=replace msg"`
+}
+
+// WhileNode provides a while-loop structure.
+// It executes the 'Do' node/chain repeatedly as long as the 'Condition' evaluates to true.
+//
+// WhileNode 提供 while 循环结构。
+// 只要 'Condition' 评估为真，它就会重复执行 'Do' 节点/链。
+//
+// Configuration:
+// 配置说明：
+//
+//	{
+//		"condition": "${msg.count} < 5", // Expression to check  检查表达式
+//		"do": "s3",                      // Target node ID or sub-chain  目标节点ID或子链
+//		"mode": 1                        // Processing mode: 0=DoNotProcess (default), 1=MergeValues, 2=ReplaceValues  处理模式
+//	}
+type WhileNode struct {
+	// Config contains the node configuration.
+	Config WhileNodeConfiguration
+	// ruleNodeId is the parsed target for the 'Do' action.
+	ruleNodeId types.RuleNodeId
+	// conditionTemplate is the compiled template for the condition.
+	conditionTemplate el.Template
+}
+
+// Type returns the component type.
+func (x *WhileNode) Type() string {
+	return "while"
+}
+
+func (x *WhileNode) New() types.Node {
+	return &WhileNode{Config: WhileNodeConfiguration{
+		Condition: "msg.count==nil || msg.count < 3",
+		Mode:      ReplaceValues,
+	}}
+}
+
+// Init initializes the node.
+func (x *WhileNode) Init(_ types.Config, configuration types.Configuration) error {
+	if err := maps.Map2Struct(configuration, &x.Config); err != nil {
+		return err
+	}
+	x.Config.Condition = strings.TrimSpace(x.Config.Condition)
+	if x.Config.Condition != "" {
+		if template, err := el.NewExprTemplate(x.Config.Condition); err != nil {
+			return fmt.Errorf("failed to create condition template: %w", err)
+		} else {
+			x.conditionTemplate = template
+		}
+	} else {
+		return errors.New("condition is empty")
+	}
+
+	x.Config.Do = strings.TrimSpace(x.Config.Do)
+	if x.Config.Do == "" {
+		return errors.New("do is empty")
+	}
+	return x.formDoVar()
+}
+
+func (x *WhileNode) toMap(data string) interface{} {
+	var dataMap interface{}
+	if err := json.Unmarshal([]byte(data), &dataMap); err == nil {
+		return dataMap
+	} else {
+		return data
+	}
+}
+
+func (x *WhileNode) toList(dataType types.DataType, itemDataList []string) []interface{} {
+	var resultData []interface{}
+	for _, itemData := range itemDataList {
+		if dataType == types.JSON {
+			resultData = append(resultData, x.toMap(itemData))
+		} else {
+			resultData = append(resultData, itemData)
+		}
+	}
+	return resultData
+}
+
+// OnMsg processes the message.
+func (x *WhileNode) OnMsg(ctx types.RuleContext, msg types.RuleMsg) {
+	var err error
+
+	// Create a context with cancel for the loop execution
+	ctxWithCancel, cancelFunc := context.WithCancel(ctx.GetContext())
+	defer cancelFunc()
+
+	var inData = msg.GetData()
+	var inMsg = msg.Copy()
+	var lastMsg = msg
+	var index = 0
+
+	var resultData []interface{}
+	var itemDataList []string
+
+	for {
+		// Update loop index in metadata
+		msg.Metadata.PutValue(KeyLoopIndex, strconv.Itoa(index))
+
+		// Check condition
+		var conditionMet bool
+		if x.conditionTemplate != nil {
+			evn := base.NodeUtils.GetEvn(ctx, msg)
+			if out, err := x.conditionTemplate.Execute(evn); err != nil {
+				ctx.TellFailure(msg, err)
+				return
+			} else {
+				// Parse result to boolean
+				conditionMet = castToBool(out)
+			}
+		} else {
+			conditionMet = false
+		}
+
+		if !conditionMet {
+			break
+		}
+
+		// Execute the iteration
+		var loopErr error
+		if lastMsg, itemDataList, loopErr = x.executeItem(ctxWithCancel, ctx, msg); loopErr != nil {
+			err = loopErr
+			break
+		}
+
+		if x.Config.Mode == MergeValues {
+			resultData = append(resultData, x.toList(msg.DataType, itemDataList)...)
+		}
+		// Always pass the updated msg to the next iteration so the condition can evaluate it
+		msg = lastMsg
+
+		// Check for break signal
+		if msg.Metadata.GetValue(MdKeyBreak) == MdValueBreak {
+			msg.Metadata.Delete(MdKeyBreak)
+			break
+		}
+
+		index++
+	}
+
+	if err != nil {
+		ctx.TellFailure(msg, err)
+	} else {
+		if x.Config.Mode == DoNotProcess {
+			inMsg.SetData(inData)
+			ctx.TellSuccess(inMsg)
+		} else if x.Config.Mode == MergeValues {
+			msg.SetData(str.ToString(resultData))
+			ctx.TellSuccess(msg)
+		} else {
+			// msg is already lastMsg (final state).
+			ctx.TellSuccess(msg)
+		}
+	}
+}
+
+// Destroy cleans up resources.
+func (x *WhileNode) Destroy() {
+}
+
+// executeItem processes the 'Do' node/chain.
+func (x *WhileNode) executeItem(ctxWithCancel context.Context, ctx types.RuleContext, fromMsg types.RuleMsg) (types.RuleMsg, []string, error) {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	var returnErr error
+	var lock sync.Mutex
+	var msgData []string
+	var lastMsg = fromMsg
+
+	// Prepare callback
+	onEnd := func(ctx types.RuleContext, msg types.RuleMsg, err error, relationType string) {
+		if err != nil {
+			returnErr = err
+		} else {
+			lock.Lock()
+			defer lock.Unlock()
+			lastMsg = msg
+			msgData = append(msgData, msg.GetData())
+		}
+	}
+
+	onAllCompleted := func() {
+		wg.Done()
+	}
+
+	if x.ruleNodeId.Type == types.CHAIN {
+		ctx.TellFlow(x.ruleNodeId.Id, fromMsg, types.WithContext(ctxWithCancel), types.WithOnEnd(onEnd), types.WithOnAllNodeCompleted(onAllCompleted))
+	} else {
+		ctx.TellNode(ctxWithCancel, x.ruleNodeId.Id, fromMsg, false, onEnd, onAllCompleted)
+	}
+
+	wg.Wait()
+
+	if returnErr != nil {
+		return lastMsg, msgData, returnErr
+	}
+	return lastMsg, msgData, ctxWithCancel.Err()
+}
+
+func (x *WhileNode) formDoVar() error {
+	values := strings.Split(x.Config.Do, ":")
+	length := len(values)
+	if length == 1 {
+		x.ruleNodeId = types.RuleNodeId{
+			Id:   strings.TrimSpace(values[0]),
+			Type: types.NODE,
+		}
+	} else if length == 2 {
+		if strings.TrimSpace(values[0]) == "chain" {
+			x.ruleNodeId = types.RuleNodeId{
+				Id:   strings.TrimSpace(values[1]),
+				Type: types.CHAIN,
+			}
+		} else {
+			x.ruleNodeId = types.RuleNodeId{
+				Id:   strings.TrimSpace(values[1]),
+				Type: types.NODE,
+			}
+		}
+	} else {
+		return fmt.Errorf("do variable should be nodeId or chain:chainId style")
+	}
+	return nil
+}
+
+// castToBool converts interface{} to bool.
+func castToBool(val interface{}) bool {
+	switch v := val.(type) {
+	case bool:
+		return v
+	case string:
+		return strings.ToLower(v) == "true"
+	case int, int8, int16, int32, int64:
+		return v != 0
+	case float32, float64:
+		return v != 0
+	default:
+		return false
+	}
+}
+
+// Desc returns the component description
+func (x *WhileNode) Desc() string {
+	return "While loop that repeatedly executes do node/chain while condition is true. condition uses el expression. Routes to Success/Failure"
+}
