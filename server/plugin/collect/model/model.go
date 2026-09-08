@@ -13,7 +13,7 @@ type CollectChannel struct {
 	global.GVA_MODEL
 	Name         string         `json:"name" gorm:"comment:通道名称;uniqueIndex" binding:"required"`
 	AccessMode   string         `json:"accessMode" gorm:"size:16;comment:接入方式 poll=轮询采集 report=主动上报" binding:"required,oneof=poll report"`
-	Driver       string         `json:"driver" gorm:"size:32;comment:驱动标识 modbus/bacnet/s7/opcua/snmp/fins/mc/iec104/dlt645/eip/mqtt"`
+	Driver       string         `json:"driver" gorm:"size:32;comment:驱动标识，仅poll通道使用 modbus/bacnet/s7/opcua/snmp/fins/mc/iec104/dlt645/eip；report通道置空"`
 	ConnConfig   datatypes.JSON `json:"connConfig" gorm:"type:jsonb;comment:连接配置JSON(结构随驱动,字段对齐组件配置元数据)"`
 	PollInterval int            `json:"pollInterval" gorm:"comment:通道默认轮询周期ms"`
 	OutputConfig datatypes.JSON `json:"outputConfig" gorm:"type:jsonb;comment:大JSON输出配置{mqttPublish:{server,username,password,topic,qos},dbWrite:{enable}}"`

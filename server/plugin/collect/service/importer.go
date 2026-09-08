@@ -70,7 +70,7 @@ const (
 	sheetReadme  = "说明"
 )
 
-var channelHeaders = []string{"通道名称*", "接入方式*", "驱动*", "连接配置JSON*", "轮询周期ms", "MQTT发布server", "MQTT发布topic", "使能", "备注"}
+var channelHeaders = []string{"通道名称*", "接入方式*", "驱动(poll必填)", "连接配置JSON*", "轮询周期ms", "输出MQTT server(大JSON发布)", "输出topic(大JSON发布)", "使能", "备注"}
 var deviceHeaders = []string{"所属通道名称*", "设备名称*", "设备类型*", "设备类型名", "站号", "采集周期ms", "使能", "备注"}
 var varHeaders = []string{"所属设备(通道/设备)*", "测点名称*", "地址*", "数据类型*", "系数", "偏移", "字节序", "采集分组", "读写", "单位", "使能", "备注"}
 
@@ -99,8 +99,8 @@ func (ImportService) GenerateTemplate() (*excelize.File, error) {
 		_ = f.SetCellValue(sheetReadme, "A1", "采集点表导入模板")
 		notes := []string{
 			"1. 接入方式：poll=轮询采集（Modbus/BACnet/S7 等结构化点表），report=主动上报（MQTT 订阅报文）",
-			"2. 连接配置JSON：随驱动而异，如 Modbus {\"server\":\"tcp://192.168.1.100:502\"}；MQTT {\"server\":\"127.0.0.1:1883\",\"deviceTypeId\":设备类型ID}",
-			"3. 驱动：modbus/bacnet/s7/opcua/snmp/fins/mc/iec104/dlt645/eip/mqtt",
+			"2. 连接配置JSON：随驱动而异。Modbus 如 {\"server\":\"tcp://192.168.1.100:502\"}；report(MQTT) 上报入口订阅如 {\"server\":\"127.0.0.1:1883\",\"topic\":\"sensors/+/data\",\"deviceTypeId\":设备类型ID}（用户名/密码/qos 可选）；6/7 两列为大JSON输出发布配置，与上报入口订阅无关",
+			"3. 驱动（仅poll通道填写，report留空）：modbus/bacnet/s7/opcua/snmp/fins/mc/iec104/dlt645/eip",
 			"4. 设备类型：register=寄存器型（按点表直采），report=报文型（须填设备类型名，且该类型已绑定已发布子流程）",
 			"5. 测点'所属设备'格式：通道名称/设备名称；地址按驱动格式（Modicon 如 40001；BACnet 如 ai:1）",
 			"6. 数据类型：INT16/UINT16/INT32/UINT32/FLOAT32/FLOAT64/BOOL/STRING",
