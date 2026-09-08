@@ -1,0 +1,14 @@
+NOTICE / 开源组件声明
+======================
+
+本仓库（gin-vue-admin，Apache License 2.0）包含以下第三方开源组件的源码副本：
+
+1. RuleGo（规则引擎核心库与 RuleGo Server 服务端）
+   - 来源：https://github.com/rulego/rulego （Gitee 镜像：https://gitee.com/rulego/rulego ）
+   - 许可证：Apache License 2.0
+   - 集成基线：v0.37.2（git subtree --squash 内嵌）
+   - 位置：server/rulego/（含核心库与 server/ 子模块）
+   - 说明：该目录视为第三方只读区，随官方 release 升级；宿主侧定制一律位于
+     server/plugin/rulego/ 胶水层，不在树内改动。升级与合规说明详见 aiDoc/rulego/。
+
+RuleGo 依其 LICENSE 原文保留版权与许可声明（server/rulego/LICENSE）。
