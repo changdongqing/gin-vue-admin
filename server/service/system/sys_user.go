@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/system/response"
 	systemReq "github.com/flipped-aurora/gin-vue-admin/server/model/system/request"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
@@ -364,4 +365,31 @@ func (userService *UserService) FindUserByUuid(uuid string) (user *system.SysUse
 func (userService *UserService) ResetPassword(ID uint, password string) (err error) {
 	err = global.GVA_DB.Model(&system.SysUser{}).Where("id = ?", ID).Update("password", utils.BcryptHash(password)).Error
 	return err
+}
+
+// GetUserSimpleList 通用选择器用户全量（未软删 + 未冻结，含部门名与岗位ID；字段白名单无手机号/邮箱等敏感字段）
+func (userService *UserService) GetUserSimpleList() (list []response.UserSimple, err error) {
+	// 主查询：联查部门名（enable=2 冻结用户不返回——冻结用户不可被协作指派）
+	err = global.GVA_DB.Table("sys_users u").
+		Select("u.id, u.username, u.nick_name, u.department_id, d.name AS department_name").
+		Joins("LEFT JOIN sys_departments d ON d.id = u.department_id AND d.deleted_at IS NULL").
+		Where("u.deleted_at IS NULL AND u.enable = 1").
+		Order("u.id").
+		Scan(&list).Error
+	if err != nil {
+		return
+	}
+	// 岗位聚合：sys_user_post 一次全量（硬删表无软删条件；内存分组避免 N+1）
+	var rows []system.SysUserPost
+	if err = global.GVA_DB.Find(&rows).Error; err != nil {
+		return
+	}
+	m := make(map[uint][]uint, len(rows))
+	for _, r := range rows {
+		m[r.UserId] = append(m[r.UserId], r.PostId)
+	}
+	for i := range list {
+		list[i].PostIds = m[list[i].ID]
+	}
+	return
 }

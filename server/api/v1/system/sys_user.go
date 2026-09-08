@@ -261,6 +261,23 @@ func (b *BaseApi) GetUserList(c *gin.Context) {
 	}, "获取成功", c)
 }
 
+// GetUserSimpleList
+// @Tags      SysUser
+// @Summary   获取用户精简全量（通用选择器数据；JWT 登录即可，不走 casbin；字段白名单无手机号/邮箱等敏感字段，不含冻结用户）
+// @Security  ApiKeyAuth
+// @Produce   application/json
+// @Success   200  {object}  response.Response{data=object,msg=string}
+// @Router    /user/getUserSimpleList [get]
+func (b *BaseApi) GetUserSimpleList(c *gin.Context) {
+	list, err := userService.GetUserSimpleList()
+	if err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败:"+err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(gin.H{"list": list}, "获取成功", c)
+}
+
 // SetUserAuthority
 // @Tags      SysUser
 // @Summary   更改用户权限

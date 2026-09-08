@@ -26,3 +26,11 @@ func (s *UserRouter) InitUserRouter(Router *gin.RouterGroup) {
 		userRouterWithoutRecord.GET("getUserInfo", baseApi.GetUserInfo)  // 获取自身信息
 	}
 }
+
+// InitUserSimpleRouter 通用选择器数据路由（挂 JwtOnlyGroup：登录即可，不走 casbin——选人/选部门是协作语义，不逐角色授权）
+func (s *UserRouter) InitUserSimpleRouter(Router *gin.RouterGroup) {
+	userSimpleRouter := Router.Group("user")
+	{
+		userSimpleRouter.GET("getUserSimpleList", baseApi.GetUserSimpleList) // 用户精简全量（只读高频，不挂 OperationRecord）
+	}
+}

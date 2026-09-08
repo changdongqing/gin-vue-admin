@@ -66,8 +66,10 @@ func Routers() *gin.Engine {
 
 	PublicGroup := Router.Group(global.GVA_CONFIG.System.RouterPrefix)
 	PrivateGroup := Router.Group(global.GVA_CONFIG.System.RouterPrefix)
+	JwtOnlyGroup := Router.Group(global.GVA_CONFIG.System.RouterPrefix)
 
 	PrivateGroup.Use(middleware.JWTAuth()).Use(middleware.CasbinHandler())
+	JwtOnlyGroup.Use(middleware.JWTAuth()) // 仅 JWT 登录即可，不配 casbin（通用选择器等协作语义数据）
 
 	{
 		// 健康监测
@@ -122,6 +124,10 @@ func Routers() *gin.Engine {
 		reportRouter.InitDataSetRouter(PrivateGroup)                        // 报表平台·数据集管理
 		reportRouter.InitExcelReportRouter(PrivateGroup)                    // 报表平台·Excel报表
 		reportRouter.InitAnalysisReportRouter(PrivateGroup)                 // 报表平台·分析报表
+	}
+
+	{
+		systemRouter.InitUserSimpleRouter(JwtOnlyGroup) // 通用选择器数据（登录即可，不走 casbin）
 	}
 
 	//插件路由安装
