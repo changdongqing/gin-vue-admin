@@ -139,27 +139,46 @@
       <el-form :model="channelForm" label-width="110px">
         <el-form-item label="通道名称" required><el-input v-model="channelForm.name" /></el-form-item>
         <el-form-item label="接入方式" required>
-          <el-select v-model="channelForm.accessMode" style="width: 100%">
+          <el-select v-model="channelForm.accessMode" style="width: 100%" @change="onAccessModeChange">
             <el-option label="轮询采集（poll）" value="poll" />
             <el-option label="主动上报（report/MQTT）" value="report" />
           </el-select>
         </el-form-item>
-        <el-form-item label="驱动" required>
+        <!-- report 通道的 MQTT 订阅由 conn_config.server/topic 承担（后端 trigger.go），不消费驱动 -->
+        <el-form-item v-if="channelForm.accessMode === 'poll'" label="驱动" required>
           <el-select v-model="channelForm.driver" style="width: 100%" allow-create filterable>
             <el-option v-for="d in drivers" :key="d" :label="d" :value="d" />
           </el-select>
         </el-form-item>
-        <el-form-item label="连接配置JSON" required>
-          <el-input v-model="channelForm.connConfig" type="textarea" :rows="4" placeholder='{"server":"tcp://192.168.1.100:502"}' />
+        <el-form-item label="连接配置JSON" :required="channelForm.accessMode === 'poll'">
+          <el-input v-model="channelForm.connConfig" type="textarea" :rows="4" :placeholder="connPlaceholder" />
         </el-form-item>
         <el-form-item v-if="channelForm.accessMode === 'poll'" label="轮询周期ms">
           <el-input-number v-model="channelForm.pollInterval" :min="1000" :step="500" />
         </el-form-item>
-        <el-form-item v-if="channelForm.accessMode === 'report'" label="MQTT server">
+        <el-form-item v-if="channelForm.accessMode === 'report'" label="设备类型" required>
+          <el-select v-model="reportTypeId" style="width: 100%" filterable placeholder="报文按该类型绑定的子流程解析">
+            <el-option v-for="t in deviceTypes" :key="t.ID" :label="t.name" :value="t.ID" />
+          </el-select>
+        </el-form-item>
+        <el-form-item v-if="channelForm.accessMode === 'report'" label="MQTT server" required>
           <el-input v-model="reportConn.server" placeholder="127.0.0.1:1883" />
         </el-form-item>
-        <el-form-item v-if="channelForm.accessMode === 'report'" label="订阅topic">
+        <el-form-item v-if="channelForm.accessMode === 'report'" label="订阅topic" required>
           <el-input v-model="reportConn.topic" placeholder="sensors/+/data" />
+        </el-form-item>
+        <el-form-item v-if="channelForm.accessMode === 'report'" label="用户名">
+          <el-input v-model="reportConn.username" placeholder="broker 无认证则留空" />
+        </el-form-item>
+        <el-form-item v-if="channelForm.accessMode === 'report'" label="密码">
+          <el-input v-model="reportConn.password" type="password" show-password placeholder="broker 无认证则留空" />
+        </el-form-item>
+        <el-form-item v-if="channelForm.accessMode === 'report'" label="QoS">
+          <el-select v-model="reportConn.qos" style="width: 100%">
+            <el-option :value="0" label="0（最多一次）" />
+            <el-option :value="1" label="1（至少一次）" />
+            <el-option :value="2" label="2（恰好一次）" />
+          </el-select>
         </el-form-item>
         <el-form-item label="使能"><el-switch v-model="channelForm.enable" /></el-form-item>
         <el-form-item label="备注"><el-input v-model="channelForm.remark" type="textarea" /></el-form-item>
@@ -242,7 +261,6 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { UploadFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import WarningBar from '@/components/warningBar/warningBar.vue'
 import { useAppStore } from '@/pinia'
@@ -271,6 +289,13 @@ const panelTitle = computed(() => {
   if (selected.value.kind === 'device') return `设备「${selected.value.raw.name}」的测点`
   return '详情'
 })
+
+// report 模式下必填连接信息均由下方表单写入，JSON 框只承载扩展键
+const connPlaceholder = computed(() =>
+  channelForm.value.accessMode === 'report'
+    ? '可留空；server/topic/认证/设备类型由下方表单写入，其余扩展键可在此手填'
+    : '{"server":"tcp://192.168.1.100:502"}'
+)
 
 const loadTree = async () => {
   const res = await getCollectTree()
@@ -304,7 +329,6 @@ const deployBadge = (ch) => {
 const onNodeClick = (data) => { selected.value = { kind: data.kind, raw: data } }
 
 const onNodeCommand = async (cmd, data) => {
-  const node = data.kind === 'channel' ? data : data
   switch (cmd) {
     case 'edit':
       if (data.kind === 'channel') openChannelForm(data)
@@ -313,10 +337,12 @@ const onNodeCommand = async (cmd, data) => {
       break
     case 'device': openDeviceForm(null, data.ID, data.name); break
     case 'variable': openVarForm(null, data.ID, data.name); break
-    case 'deploy':
-      await deployChannel(data.ID)
-      ElMessage.success(data.deploySkipped ? '配置无变更，跳过部署' : '部署成功')
+    case 'deploy': {
+      const res = await deployChannel(data.ID)
+      if (res.code !== 0) break // 拦截器已弹出后端错误（如触发器挂载失败），不再叠加成功提示
+      ElMessage.success(res.msg || '部署成功')
       break
+    }
     case 'undeploy':
       await ElMessageBox.confirm('下线后停止采集，确认？', '提示', { type: 'warning' })
       await undeployChannel(data.ID)
@@ -345,27 +371,45 @@ const onNodeCommand = async (cmd, data) => {
 // 通道表单
 const channelVisible = ref(false)
 const channelForm = ref({})
-const reportConn = ref({ server: '', topic: '' })
+const blankReportConn = () => ({ server: '', topic: '', username: '', password: '', qos: 0 })
+const reportConn = ref(blankReportConn())
+const reportTypeId = ref('')
 const openChannelForm = (row) => {
   if (row) {
     channelForm.value = { ...row }
-    try {
-      const conn = JSON.parse(row.connConfig || '{}')
-      reportConn.value = { server: conn.server || '', topic: conn.topic || '' }
-    } catch (e) { reportConn.value = { server: '', topic: '' } }
+    const conn = safeParse(row.connConfig)
+    reportConn.value = {
+      server: conn.server || '',
+      topic: conn.topic || '',
+      username: conn.username || '',
+      password: conn.password || '',
+      qos: Number(conn.qos) || 0,
+    }
+    reportTypeId.value = conn.deviceTypeId || ''
   } else {
     channelForm.value = { accessMode: 'poll', driver: 'modbus', enable: true, pollInterval: 5000 }
-    reportConn.value = { server: '', topic: '' }
+    reportConn.value = blankReportConn()
+    reportTypeId.value = ''
   }
   channelVisible.value = true
 }
 const submitChannel = async () => {
   const f = { ...channelForm.value }
   if (f.accessMode === 'report') {
-    const base = f.ID ? safeParse(f.connConfig) : {}
-    base.server = reportConn.value.server
-    base.topic = reportConn.value.topic
+    if (!reportTypeId.value) { ElMessage.warning('请选择设备类型（决定报文解析子流程）'); return }
+    if (!reportConn.value.server || !reportConn.value.topic) { ElMessage.warning('请填写 MQTT server 与订阅topic'); return }
+    // 保留手填 JSON 的其余扩展键，表单字段为权威覆盖；deviceTypeId 供编译器绑定子流程
+    const base = safeParse(f.connConfig)
+    Object.assign(base, {
+      server: reportConn.value.server,
+      topic: reportConn.value.topic,
+      username: reportConn.value.username,
+      password: reportConn.value.password,
+      qos: reportConn.value.qos,
+      deviceTypeId: reportTypeId.value,
+    })
     f.connConfig = JSON.stringify(base)
+    f.driver = '' // 驱动仅 poll 编译消费（x/iotRead），report 置空并清理历史脏值
   }
   if (f.ID) await updateChannel(f)
   else await createChannel(f)
@@ -374,6 +418,11 @@ const submitChannel = async () => {
   loadTree()
 }
 const safeParse = (s) => { try { return JSON.parse(s || '{}') } catch (e) { return {} } }
+
+// 从 report 切回 poll 时补回默认驱动，避免隐藏过的必填项为空
+const onAccessModeChange = (mode) => {
+  if (mode === 'poll' && !channelForm.value.driver) channelForm.value.driver = 'modbus'
+}
 
 // 设备表单
 const deviceVisible = ref(false)
