@@ -31,6 +31,11 @@ func (CollectRouter) Init(private *gin.RouterGroup) {
 		g.PUT("variables", a.UpdateVariable)
 		g.DELETE("variables/:id", a.DeleteVariable)
 		g.GET("variables", a.GetVariableList)
+		// 设备类型
+		g.GET("deviceTypes", a.GetDeviceTypeList)
+		g.POST("deviceTypes", a.CreateDeviceType)
+		g.PUT("deviceTypes", a.UpdateDeviceType)
+		g.DELETE("deviceTypes/:id", a.DeleteDeviceType)
 		// 部署
 		g.POST("deploy/:id", a.DeployChannel)
 		g.DELETE("deploy/:id", a.UndeployChannel)

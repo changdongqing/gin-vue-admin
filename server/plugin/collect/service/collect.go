@@ -422,3 +422,45 @@ func (ParseChainService) TestParseChain(id uint) (string, error) {
 	}
 	return bc.ExecuteChain(testID, msgType, pc.TestPayload)
 }
+
+// DeviceTypeService 设备类型服务（报文型绑定子流程）。
+type DeviceTypeService struct{}
+
+// GetDeviceTypeList 设备类型列表。
+func (DeviceTypeService) GetDeviceTypeList() ([]model.CollectDeviceType, error) {
+	var list []model.CollectDeviceType
+	err := global.GVA_DB.Order("id").Find(&list).Error
+	return list, err
+}
+
+// CreateDeviceType 创建设备类型。
+func (DeviceTypeService) CreateDeviceType(dt *model.CollectDeviceType) error {
+	var count int64
+	global.GVA_DB.Model(&model.CollectDeviceType{}).Where("name = ?", dt.Name).Count(&count)
+	if count > 0 {
+		return errors.New("设备类型名已存在: " + dt.Name)
+	}
+	return global.GVA_DB.Create(dt).Error
+}
+
+// UpdateDeviceType 更新设备类型。
+func (DeviceTypeService) UpdateDeviceType(dt *model.CollectDeviceType) error {
+	var old model.CollectDeviceType
+	if err := global.GVA_DB.First(&old, dt.ID).Error; err != nil {
+		return errors.New("设备类型不存在")
+	}
+	return global.GVA_DB.Model(&old).Omit("created_at").Updates(map[string]interface{}{
+		"name": dt.Name, "payload_type": dt.PayloadType, "parse_chain_id": dt.ParseChainID,
+		"enable": dt.Enable, "remark": dt.Remark,
+	}).Error
+}
+
+// DeleteDeviceType 删除设备类型（被设备引用时拒绝）。
+func (DeviceTypeService) DeleteDeviceType(id uint) error {
+	var count int64
+	global.GVA_DB.Model(&model.CollectDevice{}).Where("device_type_id = ?", id).Count(&count)
+	if count > 0 {
+		return errors.New("设备类型被设备引用，先删除或改绑设备")
+	}
+	return global.GVA_DB.Delete(&model.CollectDeviceType{}, id).Error
+}

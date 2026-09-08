@@ -441,3 +441,55 @@ func (CollectApi) ExportConfig(c *gin.Context) {
 	c.Header("Content-Disposition", "attachment; filename=collect-export.xlsx")
 	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buf.Bytes())
 }
+
+// ---------- 设备类型（报文型绑定） ----------
+
+var deviceTypeService = service.DeviceTypeService{}
+
+// GetDeviceTypeList 设备类型列表。
+func (CollectApi) GetDeviceTypeList(c *gin.Context) {
+	list, err := deviceTypeService.GetDeviceTypeList()
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithData(list, c)
+}
+
+// CreateDeviceType 创建设备类型。
+func (CollectApi) CreateDeviceType(c *gin.Context) {
+	var dt model.CollectDeviceType
+	if err := c.ShouldBindJSON(&dt); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := deviceTypeService.CreateDeviceType(&dt); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithData(dt, c)
+}
+
+// UpdateDeviceType 更新设备类型。
+func (CollectApi) UpdateDeviceType(c *gin.Context) {
+	var dt model.CollectDeviceType
+	if err := c.ShouldBindJSON(&dt); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := deviceTypeService.UpdateDeviceType(&dt); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithMessage("更新成功", c)
+}
+
+// DeleteDeviceType 删除设备类型。
+func (CollectApi) DeleteDeviceType(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+	if err := deviceTypeService.DeleteDeviceType(uint(id)); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithMessage("删除成功", c)
+}
