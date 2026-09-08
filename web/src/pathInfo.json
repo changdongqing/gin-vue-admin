@@ -1,5 +1,10 @@
 {
   "/src/view/about/index.vue": "About",
+  "/src/view/collect/components/runlogDrawer.vue": "RunlogDrawer",
+  "/src/view/collect/config/importWizard.vue": "ImportWizard",
+  "/src/view/collect/config/index.vue": "CollectConfig",
+  "/src/view/collect/monitor/index.vue": "CollectMonitor",
+  "/src/view/collect/parseChains/index.vue": "CollectParseChains",
   "/src/view/dashboard/components/banner.vue": "Banner",
   "/src/view/dashboard/components/card.vue": "Card",
   "/src/view/dashboard/components/charts-content-numbers.vue": "ChartsContentNumbers",
