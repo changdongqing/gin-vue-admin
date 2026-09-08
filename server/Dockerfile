@@ -1,4 +1,6 @@
-FROM golang:alpine as builder
+# 固定 Go 版本（go.mod 与内嵌的 rulego server 模块均要求 go 1.25.0）；
+# 用 golang:alpine 跟随 latest，上游 go 指令抬升时会静默失败
+FROM golang:1.25-alpine as builder
 
 WORKDIR /go/src/github.com/flipped-aurora/gin-vue-admin/server
 COPY . .

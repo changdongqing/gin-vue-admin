@@ -40,6 +40,7 @@ services:
       - 'host.docker.internal:host-gateway' # 指向宿主机, 复用宿主机的 PostgreSQL 与 Redis
     volumes:
       - ./config.docker.yaml:/go/src/github.com/flipped-aurora/gin-vue-admin/server/config.docker.yaml # 运行配置挂载, 初始化后凭据持久化到宿主机
+      - ./resource/rulego/data:/go/src/github.com/flipped-aurora/gin-vue-admin/server/resource/rulego/data # rulego 规则链/运行日志数据卷持久化
     networks:
       network:
         ipv4_address: 177.7.0.12

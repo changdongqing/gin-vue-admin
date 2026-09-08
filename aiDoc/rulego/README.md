@@ -23,3 +23,22 @@
 | ---- | ---- |
 | [01-集成方案分析.md](./01-集成方案分析.md) | 集成对象盘点、两侧架构对接分析（含认证/鉴权 SPI 实测签名）、六种集成方式对比与选型、目录与 go.mod 规划、依赖与版本影响（含共享依赖冲突表）、运行时对接与认证/鉴权桥接设计（§4.5/§4.6）、治理纪律、许可证合规、风险清单 |
 | [02-实施计划.md](./02-实施计划.md) | 分四个里程碑的落地步骤、具体命令与代码骨架、官方版本升级 SOP、验证清单 |
+
+## 实施状态（2026-09-08）
+
+| 批次 | 内容 | 提交 |
+| ---- | ---- | ---- |
+| 文档评审 | 本目录设计文档评审修订 | `fd66815e` |
+| M1 源码入库 | subtree 官方 v0.37.2 内嵌 `server/rulego/`、go.mod 双 replace、依赖抬升（mcp-go v0.44.0）、NOTICE、顺手修复 announcement/gen.go 指令误置 | `c62750a2` / `550193a3` / `61b25afa` |
+| M2 桥接运行 | 胶水插件（挂载/降级/mapXToken/watchShutdown/信封）、resource 配置基线、冒烟测试 | `522432c2` |
+| M3 认证统一 | Authenticator/Authorizer + 映射表 + WithoutLocalAuth，三态测试 | `76a60f6c` |
+| M4 配套 | Dockerfile 固定 golang:1.25-alpine、CI go 1.25、compose rulego 数据卷 | 见 git log |
+
+**验收状态**：`go build ./...` 全量通过；`go test ./plugin/rulego/...` 通过（401 信封 / admin-token 200 / 本地登录关闭 / 映射表全组合 / 头映射）。**待运行环境验证**（需 DB 的完整 GVA 进程与 Docker）：M2/M3 的 curl 三态、compose 一键起、subtree pull 演练。
+
+**实施口径与文档的偏差记录**：
+
+1. go.mod 中 rulego require 为 tidy 生成的占位版本号（`v0.0.0-00010101…`）——filesystem replace 下由 go 工具链管理，语义等同"树内源码"，与文档示例的 `v0.37.2` 不一致属预期；
+2. 888 超管在 Authorizer 中显式放行（原因见 01 文档 §4.6 实施口径说明）；
+3. `app.WithTransportDisabled()` 未启用——v0.37.2 中该选项无消费者，与官方 bridge 示例保持一致；
+4. M4 前端「规则链管理」页面（02 文档 M4.4）**未实施**，按计划"可拆分独立排期"留作后续；GVA「API 管理」录入 `/rulego/**` 虚拟路径与普通角色授权属运行时数据操作，部署时执行。
